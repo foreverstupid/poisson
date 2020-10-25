@@ -3,14 +3,15 @@ CFLAGS=-Wall -g -fno-exceptions
 LIBS=-lm
 LDFLAGS=
 
-SRC=vector.c
+SRC=vector.c solve.c
+NOSRC=definitions.h
 OBJ=$(SRC:%.c=%.o)
 NAME=poisson
 
-%.o: %.c %.h
+%.o: %.c %.h $(NOSRC)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(NAME): main.c $(OBJ)
+$(NAME): main.c $(OBJ) $(NOSRC)
 	$(CC) $(CFLAGS) $(INCDIR) $(LDFLAGS) $^ $(LIBS) -o $@
 
 clean:

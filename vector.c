@@ -12,18 +12,14 @@ Vector *new_vector(int length)
 
 
 
-Vector *get_vector_from_func(
-    Func func,
-    scalar_t start,
-    scalar_t end,
-    int length)
+Vector *get_vector_from_func(Func func, const Range *range)
 {
-    Vector *result = new_vector(length);
+    Vector *result = new_vector(range->count);
     int i;
-    scalar_t x = start;
-    scalar_t step = (end - start) / (length - 1);
+    scalar_t x = range->start;
+    scalar_t step = (range->end - range->start) / (range->count - 1);
 
-    for (i = 0; i < length; i++)
+    for (i = 0; i < range->count; i++)
     {
         result->data[i] = func(x);
         x += step;
@@ -34,7 +30,7 @@ Vector *get_vector_from_func(
 
 
 
-Vector *copy(Vector *vector)
+Vector *copy(const Vector *vector)
 {
     Vector *result = new_vector(vector->length);
     result->length = vector->length;
@@ -58,7 +54,7 @@ void delete_vector(Vector *vector)
 
 
 
-scalar_t dot_product(Vector *v1, Vector *v2)
+scalar_t dot_product(const Vector *v1, const Vector *v2)
 {
     int i;
     double res = v1->data[0] * v2->data[0];
@@ -69,13 +65,6 @@ scalar_t dot_product(Vector *v1, Vector *v2)
     }
 
     return res;
-}
-
-
-
-scalar_t get_norm(Vector *vector)
-{
-    return sqrt(dot_product(vector, vector));
 }
 
 

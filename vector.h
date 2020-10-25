@@ -3,11 +3,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-
-/*
- * The type of the scalar.
- */
-typedef double scalar_t;
+#include "definitions.h"
 
 /*
  * Vector of scalars.
@@ -17,11 +13,6 @@ typedef struct Vector
     scalar_t *data;
     int length;
 } Vector;
-
-/*
- * Scalar function of a single argument.
- */
-typedef scalar_t (*Func)(scalar_t);
 
 
 
@@ -33,18 +24,13 @@ Vector *new_vector(int length);
 /*
  * Creates a new vector that contains samples of the given scalar
  * function.
- * Note: samples include start and end points.
  */
-Vector *get_vector_from_func(
-    Func func,
-    scalar_t start,
-    scalar_t end,
-    int length);
+Vector *get_vector_from_func(Func func, const Range *range);
 
 /*
  * Returns the copy of the given vector.
  */
-Vector *copy(Vector *other);
+Vector *copy(const Vector *other);
 
 /*
  * Disposes all resources that are taken by the given vector.
@@ -54,12 +40,15 @@ void delete_vector(Vector *vector);
 /*
  * Returns the dot product of two vectors of the same length.
  */
-scalar_t dot_product(Vector *v1, Vector *v2);
+scalar_t dot_product(const Vector *v1, const Vector *v2);
 
 /*
  * Returns the norm of the given vector.
  */
-scalar_t get_norm(Vector *vector);
+inline scalar_t get_norm(const Vector *vector)
+{
+    return sqrt(dot_product(vector, vector));
+}
 
 /*
  * Multiplies the given vector by the given scalar componentwise.
@@ -78,5 +67,11 @@ void add(Vector *v1, Vector *v2);
  * Note: the length of vectors should be the same.
  */
 void sub(Vector *v1, Vector *v2);
+
+/*
+ * Returns C-norm of the vectors difference.
+ * Note: the length of vectors should be the same.
+ */
+scalar_t get_difference_norm(const Vector *v1, const Vector *v2);
 
 #endif
