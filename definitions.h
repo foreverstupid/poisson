@@ -23,17 +23,21 @@ typedef struct Range
 } Range;
 
 /*
+ * XY-ranges of scalar value samples.
+ */
+typedef struct Range2
+{
+    Range xrange;
+    Range yrange;
+} Range2;
+
+/*
  * Gets the step of the range.
  */
-inline scalar_t get_step(const Range *range)
+static inline scalar_t get_step(const Range *range)
 {
     return (range->end - range->start) / (range->count - 1);
 }
-
-/*
- * Scalar function of a single argument.
- */
-typedef scalar_t (*Func)(scalar_t);
 
 /*
  * Scalar function of two arguments.
@@ -62,9 +66,10 @@ typedef enum BoundaryType
 } BoundaryType;
 
 /*
- * Contains input data for the Poisson boundary value problem.
+ * Contains information about known functions that are parts of the
+ * problem.
  */
-typedef struct Problem
+typedef struct FunctionsInfo
 {
     /*
      * Potential function.
@@ -90,16 +95,22 @@ typedef struct Problem
      * The type of the boundary conditions.
      */
     BoundaryType boundary_type;
+} FunctionsInfo;
+
+/*
+ * Contains input data for the Poisson boundary value problem.
+ */
+typedef struct Problem
+{
+    /*
+     * Known functions.
+     */
+    FunctionsInfo funcs;
 
     /*
-     * The range of the X-values.
+     * The XY-ranges of the equation area.
      */
-    Range x_range;
-
-    /*
-     * The range of the Y-values.
-     */
-    Range y_range;
+    Range2 ranges;
 } Problem;
 
 #endif

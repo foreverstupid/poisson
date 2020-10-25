@@ -3,7 +3,7 @@ CFLAGS=-Wall -g -fno-exceptions
 LIBS=-lm
 LDFLAGS=
 
-SRC=vector.c solve.c
+SRC=matrix.c solve.c
 NOSRC=definitions.h
 OBJ=$(SRC:%.c=%.o)
 NAME=poisson

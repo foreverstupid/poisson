@@ -26,25 +26,29 @@ scalar_t q(scalar_t x, scalar_t y)
 int main(int argc, char **argv)
 {
     Problem problem = {
-        .boundary_type = first,
-        .phi = &phi,
-        .f = &F,
-        .k = &k,
-        .q = &q,
-        .x_range = {
-            .count = 100,
-            .start = -2,
-            .end = 2
+        .funcs = {
+            .boundary_type = first,
+            .phi = &phi,
+            .f = &F,
+            .k = &k,
+            .q = &q
         },
-        .y_range = {
-            .count = 100,
-            .start = -2,
-            .end = 2
+        .ranges = {
+            .xrange = {
+                .count = 100,
+                .start = -2,
+                .end = 2
+            },
+            .yrange = {
+                .count = 100,
+                .start = -2,
+                .end = 2
+            }
         }
     };
 
-    Vector *solution = solve(&problem, 1e-6);
-    delete_vector(solution);
+    Matrix *solution = solve(&problem, 1e-6);
+    delete_matrix(solution);
 
     return 0;
 }

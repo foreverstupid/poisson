@@ -1,49 +1,15 @@
 #include "solve.h"
 
 /*
- * Gets samples of a two variable function.
- */
-static Vector *get_samples(
-    Func2 func,
-    const Range *x_range,
-    const Range *y_range)
-{
-    int i;
-    int j;
-    scalar_t x = x_range->start;
-    scalar_t y = y_range->start;
-    scalar_t x_step = get_step(x_range);
-    scalar_t y_step = get_step(y_range);
-
-    Vector *result = new_vector(x_range->count * y_range->count);
-
-    for (i = 0; i < x_range->count; i++)
-    {
-        y = y_range->start;
-        for (j = 0; j < y_range->count; j++)
-        {
-            result->data[i * y_range->count + j] = func(x, y);
-            y += y_step;
-        }
-
-        x += x_step;
-    }
-
-    return result;
-}
-
-
-
-/*
  * Performs a single iteration (u -> w).
  */
 static void perform_iteration(
-    const Vector *u,
-    Vector *w,
-    const Vector *K,
-    const Vector *Q,
-    const Vector *F,
-    const Vector *Phi,
+    const Matrix *u,
+    Matrix *w,
+    const Matrix *K,
+    const Matrix *Q,
+    const Matrix *F,
+    const Matrix *Phi,
     const Problem *problem)
 {
 
@@ -56,22 +22,25 @@ static void perform_iteration(
  * argument.
  */
 static void iteration_process(
-    Vector *u,
-    const Vector *K,
-    const Vector *Q,
-    const Vector *F,
-    const Vector *Phi,
+    Matrix *u,
+    const Matrix *K,
+    const Matrix *Q,
+    const Matrix *F,
+    const Matrix *Phi,
     const Problem *problem,
     scalar_t eps)
 {
-    Vector *buf;
-    Vector *w = new_vector(problem->x_range.count * problem->y_range.count);
+    Matrix *buf;
+    Matrix *w = new_matrix(
+        problem->ranges.yrange.count,
+        problem->ranges.xrange.count);
+
     scalar_t current_delta;
 
     do
     {
         perform_iteration(u, w, K, Q, F, Phi, problem);
-        current_delta = get_difference_norm(w, u);
+        current_delta = get_difference_cnorm(w, u);
         buf = w;
         w = u;
         u = buf;
@@ -83,23 +52,26 @@ static void iteration_process(
 
 
 
-Vector *solve(const Problem *problem, scalar_t eps)
+Matrix *solve(const Problem *problem, scalar_t eps)
 {
-    Vector *K = get_samples(problem->k, &(problem->x_range), &(problem->y_range));
-    Vector *Q = get_samples(problem->q, &(problem->x_range), &(problem->y_range));
-    Vector *F = get_samples(problem->f, &(problem->x_range), &(problem->y_range));
-    Vector *Phi = get_samples(problem->phi, &(problem->x_range), &(problem->y_range));
+    Matrix *K = get_matrix_from_func2(problem->funcs.k, &(problem->ranges));
+    Matrix *Q = get_matrix_from_func2(problem->funcs.q, &(problem->ranges));
+    Matrix *F = get_matrix_from_func2(problem->funcs.f, &(problem->ranges));
+    Matrix *Phi = get_matrix_from_func2(problem->funcs.phi, &(problem->ranges));
 
-    double h1 = get_step(&(problem->x_range));
-    double h2 = get_step(&(problem->y_range));
+    double h1 = get_step(&(problem->ranges.xrange));
+    double h2 = get_step(&(problem->ranges.yrange));
 
-    Vector *u = new_vector(problem->x_range.count * problem->y_range.count);
+    Matrix *u = new_matrix(
+        problem->ranges.yrange.count,
+        problem->ranges.xrange.count);
+
     iteration_process(u, K, Q, F, Phi, problem, eps);
 
-    delete_vector(K);
-    delete_vector(Q);
-    delete_vector(Phi);
-    delete_vector(F);
+    delete_matrix(K);
+    delete_matrix(Q);
+    delete_matrix(F);
+    delete_matrix(Phi);
 
     return u;
 }
