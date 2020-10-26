@@ -1,9 +1,9 @@
-CC=gcc
+CC=mpicc
 CFLAGS=-Wall -g -fno-exceptions
 LIBS=-lm
 LDFLAGS=
 
-SRC=matrix.c solve.c
+SRC=matrix.c solve.c operator.c
 NOSRC=definitions.h
 OBJ=$(SRC:%.c=%.o)
 NAME=poisson

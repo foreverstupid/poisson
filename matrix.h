@@ -11,8 +11,8 @@
 typedef struct Matrix
 {
     scalar_t *data;     /* matrix values in a row-major order */
-    int ncols;          /* count of columns */
-    int nrows;          /* count of rows */
+    int nx;             /* size along X-axis (count of columns) */
+    int ny;             /* size along Y-axis (count of rows) */
 } Matrix;
 
 
@@ -20,7 +20,7 @@ typedef struct Matrix
 /*
  * Creates a new matrix of the given size.
  */
-Matrix *new_matrix(int nrows, int ncols);
+Matrix *new_matrix(int nx, int ny);
 
 /*
  * Creates a new matrix that contains samples of the given scalar
@@ -31,12 +31,30 @@ Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges);
 /*
  * Returns the copy of the given matrix.
  */
-Matrix *copy(const Matrix *other);
+Matrix *copy_matrix(const Matrix *other);
 
 /*
  * Disposes all resources that are taken by the given matrix.
  */
 void delete_matrix(Matrix *matrix);
+
+/*
+ * Help function for getting an element corresponding to xi and yj, i.e.
+ * m[j, i].
+ */
+static inline scalar_t at(const Matrix *m, int i, int j)
+{
+    return m->data[j * m->nx + i];
+}
+
+/*
+ * Help fucntion for setting an element corresponding to xi and yj, i.e.
+ * m[j, i].
+ */
+static inline void set(Matrix *m, int i, int j, scalar_t val)
+{
+    m->data[j * m->nx + i] = val;
+}
 
 /*
  * Returns the dot product of two matricies of the same size.
