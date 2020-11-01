@@ -11,7 +11,6 @@ inline static scalar_t laplas_xpart(
     const Matrix *u)
 {
     return 
-        1.0 / op->h1 *
         (
             at(op->A, i + 1, j) / op->h1 *
             (
@@ -21,7 +20,7 @@ inline static scalar_t laplas_xpart(
             (
                 at(u, i, j) - at(u, i - 1, j)
             )
-        );
+        ) / op->h1;
 }
 
 
@@ -37,7 +36,6 @@ inline static scalar_t laplas_ypart(
     const Matrix *u)
 {
     return 
-        1.0 / op->h2 *
         (
             at(op->B, i, j + 1) / op->h2 *
             (
@@ -47,7 +45,7 @@ inline static scalar_t laplas_ypart(
             (
                 at(u, i, j) - at(u, i, j - 1)
             )
-        );
+        ) / op->h2;
 }
 
 
@@ -377,9 +375,9 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
     scalar_t tmp;
 
     /* calculate inner points */
-    for (i = 1; i < u->nx - 1; i++)
+    for (j = 1; j < u->ny - 1; j++)
     {
-        for (j = 1; j < u->ny - 1; j++)
+        for (i = 1; i < u->nx - 1; i++)
         {
             tmp =
                 -laplas_xpart(i, j, op, u) - laplas_ypart(i, j, op, u) +

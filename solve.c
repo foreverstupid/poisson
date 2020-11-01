@@ -7,22 +7,20 @@
 static void perform_iteration(
     Matrix *v,
     const Operator *op,
-    const Matrix *u)
+    const Matrix *u,
+    Matrix *buf)
 {
-    scalar_t tau;           /* iterational parameter */
+    scalar_t tau;                   /* iterational parameter */
     apply(v, op, u);
-    sub(v, op->F);          /* residual */
-
-    Matrix *Ar = copy_matrix(v);    /* operator applied to residual */
-    apply(Ar, op, v);
+    sub(v, op->F);                  /* residual */
+    apply(buf, op, v);               /* operator applied to residual */
 
     tau =
-        dot_product(Ar, v, op->h1, op->h2) /
-        get_squared_norm(Ar, op->h1, op->h2);
+        dot_product(buf, v, op->h1, op->h2) /
+        get_squared_norm(buf, op->h1, op->h2);
 
     multiply(v, tau);
     linear_combination(v, u, -tau, v);
-    delete_matrix(Ar);
 }
 
 /*
@@ -31,14 +29,15 @@ static void perform_iteration(
  */
 static Matrix *find_solution(const Operator *op, scalar_t eps)
 {
-    Matrix *u = copy_matrix(op->F);
+    Matrix *u = copy_matrix(op->B);
     Matrix *v = new_matrix(u->nx, u->ny);
     Matrix *tmp;
+    Matrix *buf = new_matrix(u->nx, u->ny);
     scalar_t curr_eps;
 
     do
     {
-        perform_iteration(v, op, u);
+        perform_iteration(v, op, u, buf);
         curr_eps = get_difference_cnorm(u, v);
 
         tmp = u;
@@ -48,6 +47,7 @@ static Matrix *find_solution(const Operator *op, scalar_t eps)
     while (curr_eps > eps);
 
     delete_matrix(v);
+    delete_matrix(buf);
     return u;
 }
 
@@ -107,8 +107,8 @@ static void correct_right_part(const Operator *op)
     {
         for (j = 1; j < N; j++)
         {
-            tmp = 2.0 / op->h2 * at(op->PhiL, 0, j);
-            set(op->F, 0, j, at(op->F, 0, j) + tmp);
+            tmp = at(op->F, 0, j) + 2.0 / op->h2 * op->PhiL->data[j];
+            set(op->F, 0, j, tmp);
         }
     }
 
@@ -116,8 +116,8 @@ static void correct_right_part(const Operator *op)
     {
         for (j = 1; j < N; j++)
         {
-            tmp = 2.0 / op->h2 * at(op->PhiR, M, j);
-            set(op->F, M, j, at(op->F, M, j) + tmp);
+            tmp = at(op->F, M, j) + 2.0 / op->h2 * op->PhiR->data[j];
+            set(op->F, M, j, tmp);
         }
     }
 
@@ -125,8 +125,8 @@ static void correct_right_part(const Operator *op)
     {
         for (i = 1; i < M; i++)
         {
-            tmp = 2.0 / op->h1 * at(op->PhiB, i, 0);
-            set(op->F, i, 0, at(op->F, i, 0) + tmp);
+            tmp = at(op->F, i, 0) + 2.0 / op->h1 * op->PhiB->data[i];
+            set(op->F, i, 0, tmp);
         }
     }
 
@@ -134,8 +134,8 @@ static void correct_right_part(const Operator *op)
     {
         for (i = 1; i < M; i++)
         {
-            tmp = 2.0 / op->h1 * at(op->PhiT, i, 0);
-            set(op->F, i, N, at(op->F, i, N) + tmp);
+            tmp = at(op->F, i, N) + 2.0 / op->h1 * op->PhiT->data[i];
+            set(op->F, i, N, tmp);
         }
     }
 

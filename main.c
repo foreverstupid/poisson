@@ -10,11 +10,6 @@
 #define Y1 0.0
 #define Y2 3.0
 
-scalar_t u(scalar_t x, scalar_t y)
-{
-    return sqrt(4 + x * y);
-}
-
 scalar_t k(scalar_t x, scalar_t y)
 {
     return 4 + x + y;
@@ -28,7 +23,7 @@ scalar_t q(scalar_t x, scalar_t y)
 
 scalar_t F(scalar_t x, scalar_t y)
 {
-    scalar_t uval = u(x, y);
+    scalar_t uval = sqrt(x * y + 4);
     scalar_t u3 = uval * uval * uval;
 
     return
@@ -39,22 +34,26 @@ scalar_t F(scalar_t x, scalar_t y)
 
 scalar_t left(scalar_t t)
 {
-    return u(X1, t);
+    scalar_t uval = sqrt(X1 * t + 4);
+    return -0.5 * t * (4 + X1 + t) / uval + uval;
 }
 
 scalar_t right(scalar_t t)
 {
-    return u(X2, t);
+    scalar_t uval = sqrt(X2 * t + 4);
+    return 0.5 * t * (4 + X2 + t) / uval + uval;
 }
 
 scalar_t bottom(scalar_t t)
 {
-    return u(t, Y1);
+    scalar_t uval = sqrt(t * Y1 + 4);
+    return -0.5 * t * (4 + t + Y1) / uval;
 }
 
 scalar_t top(scalar_t t)
 {
-    return u(t, Y2);
+    scalar_t uval = sqrt(t * Y2 + 4);
+    return 0.5 * t * (4 + t + Y2) / uval;
 }
 
 

@@ -29,5 +29,6 @@ with open(out_file, "r") as f:
 fig = plt.figure()
 hm_axis = fig.add_subplot(1, 1, 1, projection="3d")
 
+real_zs = np.sqrt(xs * ys + 4)
 hm = hm_axis.plot_surface(xs, ys, zs)
 fig.savefig(plot_file_name)

@@ -109,11 +109,21 @@ scalar_t dot_product(
     scalar_t h2)
 {
     int i;
-    double res = m1->data[0] * m2->data[0];
+    int j;
+    scalar_t res = 0.0;
+    scalar_t rx;
+    scalar_t ry;
+    int M = m1->nx - 1;
+    int N = m1->ny - 1;
 
-    for (i = 1; i < m1->nx; i++)
+    for (j = 0; j < m1->ny; j++)
     {
-        res += m1->data[i] * m2->data[i];
+        ry = j == 0 || j == N ? 0.5 * h2 : h2;
+        for (i = 0; i < m1->nx; i++)
+        {
+            rx = i == 0 || i == M ? 0.5 * h1 : h1;
+            res += at(m1, i, j) * at(m2, i, j) * rx * ry;
+        }
     }
 
     return res;
