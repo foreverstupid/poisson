@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <math.h>
-#include <mpi.h>
+//#include <mpi.h>
 #include "definitions.h"
 #include "solve.h"
+#include "output.h"
 
 #define X1 0.0
 #define X2 4.0
@@ -94,9 +95,10 @@ int main(int argc, char **argv)
     sscanf(argv[1], "%d", &(config.x_grid_count));
     sscanf(argv[2], "%d", &(config.y_grid_count));
 
-    MPI_Init(&argc, &argv);
+    //MPI_Init(&argc, &argv);
     Matrix *solution = solve(&problem, &config);
-    MPI_Finalize();
+    //MPI_Finalize();
+    write_as_csv(solution, argv[3]);
     delete_matrix(solution);
 
     return 0;

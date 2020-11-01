@@ -12,17 +12,17 @@ typedef struct Operator
 {
     /* known functions from the equation */
 
-    Matrix A;   /* A[i, j] = k(x_i - 0.5*h_1, y_j) */
-    Matrix B;   /* B[i, j] = k(x_i, y_j - 0.5*h_2) */
-    Matrix Q;   
-    Matrix F;
+    Matrix *A;   /* A[i, j] = k(x_i - 0.5*h_1, y_j) */
+    Matrix *B;   /* B[i, j] = k(x_i, y_j - 0.5*h_2) */
+    Matrix *Q;   
+    Matrix *F;
 
     /* boundary conditions */
 
-    Matrix PhiL;
-    Matrix PhiR;
-    Matrix PhiB;
-    Matrix PhiT;
+    Matrix *PhiL;
+    Matrix *PhiR;
+    Matrix *PhiB;
+    Matrix *PhiT;
 
     BoundaryType left_type;
     BoundaryType right_type;
@@ -39,7 +39,8 @@ typedef struct Operator
 
 /*
  * Represents the operator action over the given matrix: v = Au.
+ * Note: u and v should have the same size.
  */
-Matrix *perform(const Operator *op, const Matrix *u);
+void apply(Matrix *v, const Operator *op, const Matrix *u);
 
 #endif

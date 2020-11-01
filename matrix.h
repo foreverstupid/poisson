@@ -29,6 +29,18 @@ Matrix *new_matrix(int nx, int ny);
 Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges);
 
 /*
+ * Creates a new one-column matrix that contains samples of the given
+ * scalar function of a single argument.
+ */
+Matrix *get_column_from_func(Func func, const Range *range);
+
+/*
+ * Creates a new one-row matrix that contains samples of the given
+ * scalar function of a single argument.
+ */
+Matrix *get_row_from_func(Func func, const Range *range);
+
+/*
  * Returns the copy of the given matrix.
  */
 Matrix *copy_matrix(const Matrix *other);
@@ -59,14 +71,18 @@ static inline void set(Matrix *m, int i, int j, scalar_t val)
 /*
  * Returns the dot product of two matricies of the same size.
  */
-scalar_t dot_product(const Matrix *m1, const Matrix *m2);
+scalar_t dot_product(
+    const Matrix *m1,
+    const Matrix *m2,
+    scalar_t h1,
+    scalar_t h2);
 
 /*
- * Returns the norm of the given matrix.
+ * Returns the square of the norm of the given matrix.
  */
-inline scalar_t get_norm(const Matrix *matrix)
+inline static scalar_t get_squared_norm(const Matrix *matrix, scalar_t h1, scalar_t h2)
 {
-    return sqrt(dot_product(matrix, matrix));
+    return dot_product(matrix, matrix, h1, h2);
 }
 
 /*

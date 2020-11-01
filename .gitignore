@@ -1,5 +1,7 @@
 *.o
 *.txt
 *.csv
+*.png
 .vscode/*
+deps.mk
 poisson

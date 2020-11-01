@@ -28,7 +28,7 @@ Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges)
     for (j = 0; j < ranges->yrange.count; j++)
     {
         x = ranges->xrange.start;
-        for (; i < ranges->xrange.count; i++)
+        for (i = 0; i < ranges->xrange.count; i++)
         {
             data[i] = func(x, y);
             x += xstep;
@@ -39,6 +39,42 @@ Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges)
     }
 
     return result;
+}
+
+
+
+Matrix *get_column_from_func(Func func, const Range *range)
+{
+    Matrix *res = new_matrix(1, range->count);
+    scalar_t y = range->start;
+    scalar_t step = get_step(range);
+    int j;
+
+    for (j = 0; j < res->ny; j++)
+    {
+        res->data[j] = func(y);
+        y += step;
+    }
+
+    return res;
+}
+
+
+
+Matrix *get_row_from_func(Func func, const Range *range)
+{
+    Matrix *res = new_matrix(range->count, 1);
+    scalar_t x = range->start;
+    scalar_t step = get_step(range);
+    int i;
+
+    for (i = 0; i < res->ny; i++)
+    {
+        res->data[i] = func(x);
+        x += step;
+    }
+
+    return res;
 }
 
 
@@ -66,12 +102,16 @@ void delete_matrix(Matrix *matrix)
 
 
 
-scalar_t dot_product(const Matrix *m1, const Matrix *m2)
+scalar_t dot_product(
+    const Matrix *m1,
+    const Matrix *m2,
+    scalar_t h1,
+    scalar_t h2)
 {
     int i;
     double res = m1->data[0] * m2->data[0];
 
-    for (i = 1; i < m1->nx * m1->ny; i++)
+    for (i = 1; i < m1->nx; i++)
     {
         res += m1->data[i] * m2->data[i];
     }
