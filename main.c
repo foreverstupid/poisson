@@ -31,7 +31,10 @@ scalar_t F(scalar_t x, scalar_t y)
     scalar_t uval = u(x, y);
     scalar_t u3 = uval * uval * uval;
 
-    return 0.25 * (x*x + y*y) / u3 + q(x, y) * uval;
+    return
+        q(x, y) * uval -
+        0.5 * (x + y) / uval +
+        0.25 * (x * x + y * y) * (4 + x + y) / u3;
 }
 
 scalar_t left(scalar_t t)
@@ -90,15 +93,15 @@ int main(int argc, char **argv)
     };
 
     SolvingInfo config;
-    config.eps = 1e-6;
 
     sscanf(argv[1], "%d", &(config.x_grid_count));
     sscanf(argv[2], "%d", &(config.y_grid_count));
+    sscanf(argv[3], "%lf", &(config.eps));
 
     //MPI_Init(&argc, &argv);
     Matrix *solution = solve(&problem, &config);
     //MPI_Finalize();
-    write_as_csv(solution, argv[3]);
+    write_as_csv(solution, argv[4]);
     delete_matrix(solution);
 
     return 0;

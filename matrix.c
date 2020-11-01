@@ -68,7 +68,7 @@ Matrix *get_row_from_func(Func func, const Range *range)
     scalar_t step = get_step(range);
     int i;
 
-    for (i = 0; i < res->ny; i++)
+    for (i = 0; i < res->nx; i++)
     {
         res->data[i] = func(x);
         x += step;
@@ -132,12 +132,16 @@ void multiply(Matrix *matrix, scalar_t f)
 
 
 
-void add(Matrix *m1, const Matrix *m2)
+void linear_combination(
+    Matrix *res,
+    const Matrix *m1,
+    scalar_t t,
+    const Matrix *m2)
 {
     int i;
-    for (i = 0; i < m1->nx * m2->ny; i++)
+    for (i = 0; i < m1->nx * m1->ny; i++)
     {
-        m1->data[i] += m2->data[i];
+        res->data[i] = m1->data[i] + t * m2->data[i];
     }
 }
 

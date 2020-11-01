@@ -11,21 +11,17 @@ static void perform_iteration(
 {
     scalar_t tau;           /* iterational parameter */
     apply(v, op, u);
+    sub(v, op->F);          /* residual */
 
-    Matrix *r = copy_matrix(v);     /* residual */
-    sub(r, op->F);
-
-    Matrix *Ar = copy_matrix(r);    /* operator applied to residual */
-    apply(Ar, op, r);
+    Matrix *Ar = copy_matrix(v);    /* operator applied to residual */
+    apply(Ar, op, v);
 
     tau =
-        dot_product(Ar, r, op->h1, op->h2) /
+        dot_product(Ar, v, op->h1, op->h2) /
         get_squared_norm(Ar, op->h1, op->h2);
 
-    multiply(r, tau);
-    sub(v, r);
-
-    delete_matrix(r);
+    multiply(v, tau);
+    linear_combination(v, u, -tau, v);
     delete_matrix(Ar);
 }
 
@@ -37,17 +33,60 @@ static Matrix *find_solution(const Operator *op, scalar_t eps)
 {
     Matrix *u = copy_matrix(op->F);
     Matrix *v = new_matrix(u->nx, u->ny);
+    Matrix *tmp;
     scalar_t curr_eps;
 
     do
     {
         perform_iteration(v, op, u);
         curr_eps = get_difference_cnorm(u, v);
+
+        tmp = u;
+        u = v;
+        v = tmp;
     }
     while (curr_eps > eps);
 
-    delete_matrix(u);
-    return v;
+    delete_matrix(v);
+    return u;
+}
+
+
+
+/*
+ * Performs correction of the right part in the corners of the area
+ * accorfing to the boundary conditions.
+ */
+static void corners_correction(const Operator *op)
+{
+    int M = op->F->nx - 1;
+    int N = op->F->ny - 1;
+    scalar_t mul = 2.0 / op->h1 + 2.0 / op->h2;
+    scalar_t tmp;
+
+    if (op->left_type != first && op->bottom_type != first)
+    {
+        tmp = at(op->F, 0, 0) + mul * at(op->PhiL, 0, 0);
+        set(op->F, 0, 0, tmp);
+    }
+
+    if (op->right_type != first && op->bottom_type != first)
+    {
+        tmp = at(op->F, M, 0) + mul * at(op->PhiR, 0, 0);
+        set(op->F, M, 0, tmp);
+    }
+
+    if (op->right_type != first && op->top_type != first)
+    {
+        tmp = at(op->F, M, N) + mul * at(op->PhiR, 0, N);
+        set(op->F, M, N, tmp);
+    }
+
+    if (op->left_type != first && op->top_type != first)
+    {
+        tmp = at(op->F, 0, N) + mul * at(op->PhiL, 0, N);
+        set(op->F, 0, N, tmp);
+    }
 }
 
 
@@ -66,7 +105,7 @@ static void correct_right_part(const Operator *op)
 
     if (op->left_type != first)
     {
-        for (j = 0; j < op->F->ny; j++)
+        for (j = 1; j < N; j++)
         {
             tmp = 2.0 / op->h2 * at(op->PhiL, 0, j);
             set(op->F, 0, j, at(op->F, 0, j) + tmp);
@@ -75,7 +114,7 @@ static void correct_right_part(const Operator *op)
 
     if (op->right_type != first)
     {
-        for (j = 0; j < op->F->ny; j++)
+        for (j = 1; j < N; j++)
         {
             tmp = 2.0 / op->h2 * at(op->PhiR, M, j);
             set(op->F, M, j, at(op->F, M, j) + tmp);
@@ -84,7 +123,7 @@ static void correct_right_part(const Operator *op)
 
     if (op->bottom_type != first)
     {
-        for (i = 0; i < op->F->nx; i++)
+        for (i = 1; i < M; i++)
         {
             tmp = 2.0 / op->h1 * at(op->PhiB, i, 0);
             set(op->F, i, 0, at(op->F, i, 0) + tmp);
@@ -93,12 +132,14 @@ static void correct_right_part(const Operator *op)
 
     if (op->top_type != first)
     {
-        for (i = 0; i < op->F->nx; i++)
+        for (i = 1; i < M; i++)
         {
             tmp = 2.0 / op->h1 * at(op->PhiT, i, 0);
             set(op->F, i, N, at(op->F, i, N) + tmp);
         }
     }
+
+    corners_correction(op);
 }
 
 /*
@@ -128,8 +169,8 @@ static Operator *create_operator(
     Range2 A_ranges = {
         .xrange = {
             .count = config->x_grid_count,
-            .start = problem->area.x1 - h1,
-            .end = problem->area.x2 - h1
+            .start = problem->area.x1 - h1 / 2,
+            .end = problem->area.x2 - h1 / 2
         },
         .yrange = yrange
     };
@@ -138,8 +179,8 @@ static Operator *create_operator(
         .xrange = xrange,
         .yrange = {
             .count = config->y_grid_count,
-            .start = problem->area.y1 - h2,
-            .end = problem->area.y2 - h2
+            .start = problem->area.y1 - h2 / 2,
+            .end = problem->area.y2 - h2 / 2
         }
     };
 

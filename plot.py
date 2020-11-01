@@ -6,8 +6,6 @@ import csv
 import sys
 import numpy as np
 
-plot_file_name = "poisson.png"
-
 x1 = 0.0
 x2 = 4.0
 y1 = 0.0
@@ -16,6 +14,7 @@ y2 = 3.0
 xcount = int(sys.argv[1])
 ycount = int(sys.argv[2])
 out_file = sys.argv[3]
+plot_file_name = sys.argv[4]
 
 xrange = np.linspace(x1, x2, xcount)
 yrange = np.linspace(y1, y2, ycount)

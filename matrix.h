@@ -91,17 +91,22 @@ inline static scalar_t get_squared_norm(const Matrix *matrix, scalar_t h1, scala
 void multiply(Matrix *matrix, scalar_t f);
 
 /*
- * Adds one matrix to another, storing the result in the first operand.
- * Note: the size of matricies should be the same.
- */
-void add(Matrix *m1, const Matrix *m2);
-
-/*
  * Subtracts one matrix from another, storing the result in the first
  * operand.
  * Note: the size of matricies should be the same.
  */
 void sub(Matrix *m1, const Matrix *m2);
+
+/*
+ * Calculate linear combination of the given matricies, storing result
+ * into the first operand: res = m1 + t*m2
+ * Note: the size of matricies should be the same.
+ */
+void linear_combination(
+    Matrix *res,
+    const Matrix *m1,
+    scalar_t t,
+    const Matrix *m2);
 
 /*
  * Returns C-norm of the matrixs difference.
