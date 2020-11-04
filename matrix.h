@@ -29,18 +29,6 @@ Matrix *new_matrix(int nx, int ny);
 Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges);
 
 /*
- * Creates a new one-column matrix that contains samples of the given
- * scalar function of a single argument.
- */
-Matrix *get_column_from_func(Func func, const Range *range);
-
-/*
- * Creates a new one-row matrix that contains samples of the given
- * scalar function of a single argument.
- */
-Matrix *get_row_from_func(Func func, const Range *range);
-
-/*
  * Returns the copy of the given matrix.
  */
 Matrix *copy_matrix(const Matrix *other);

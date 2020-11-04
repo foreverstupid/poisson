@@ -123,6 +123,11 @@ typedef struct Area
 
 /*
  * Contains full info about the boundary conditions.
+ * Note: boundary consitions are suppsoed to be consistent, i.e.
+ *      phi_L(y1) = phi_B(x1)
+ *      phi_L(y2) = phi_T(x1)
+ *      phi_R(y1) = phi_B(x2)
+ *      phi_R(y2) = phi_T(x2)
  */
 typedef struct BoundaryInfo
 {
@@ -168,6 +173,18 @@ typedef struct SolvingInfo
      * value, the solving process will stop.
      */
     scalar_t eps;
+
+    /*
+     * The solving process will print iterations with this frequency
+     * (i.e. if it is 10 then every 10-th iteration will be printed).
+     * If it equals to -1 then none iteration will be printed.
+     */
+    int iteration_print_frequency;
+
+    /*
+     * The directory that will contain output information.
+     */
+    const char *output_dir;
 } SolvingInfo;
 
 #endif
