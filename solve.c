@@ -10,16 +10,23 @@ static void perform_iteration(
     const Matrix *u,
     Matrix *buf)
 {
+    scalar_t tmp;
+
     scalar_t tau;                   /* iterational parameter */
     apply(v, op, u);
     sub(v, op->F);                  /* residual */
-    apply(buf, op, v);               /* operator applied to residual */
+    apply(buf, op, v);              /* operator applied to residual */
 
-    tau =
-        dot_product(buf, v, op->h1, op->h2) /
-        get_squared_norm(buf, op->h1, op->h2);
+    tmp = dot_product(buf, v, op->h1, op->h2);
+    if (fabs(tmp) > EPS)
+    {
+        tau = tmp / get_squared_norm(buf, op->h1, op->h2);
+    }
+    else
+    {
+        tau = 0.0;
+    }
 
-    multiply(v, tau);
     linear_combination(v, u, -tau, v);
 }
 
@@ -29,11 +36,13 @@ static void perform_iteration(
  */
 static Matrix *find_solution(const Operator *op, scalar_t eps)
 {
-    Matrix *u = copy_matrix(op->B);
+    Matrix *u = new_matrix(op->F->nx, op->F->ny);
     Matrix *v = new_matrix(u->nx, u->ny);
     Matrix *tmp;
     Matrix *buf = new_matrix(u->nx, u->ny);
     scalar_t curr_eps;
+
+    apply(u, op, v);
 
     do
     {

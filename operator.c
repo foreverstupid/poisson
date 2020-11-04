@@ -12,15 +12,10 @@ inline static scalar_t laplas_xpart(
 {
     return 
         (
-            at(op->A, i + 1, j) / op->h1 *
-            (
-                at(u, i + 1, j) - at(u, i, j)
-            ) -
-            at(op->A, i, j) / op->h1 *
-            (
-                at(u, i, j) - at(u, i - 1, j)
-            )
-        ) / op->h1;
+            at(op->A, i + 1, j) * (at(u, i + 1, j) - at(u, i, j)) -
+            at(op->A, i, j) * (at(u, i, j) - at(u, i - 1, j))
+        ) /
+        (op->h1 * op->h1);
 }
 
 
@@ -37,15 +32,12 @@ inline static scalar_t laplas_ypart(
 {
     return 
         (
-            at(op->B, i, j + 1) / op->h2 *
-            (
-                at(u, i, j + 1) - at(u, i, j)
-            ) -
-            at(op->B, i, j) / op->h2 *
-            (
-                at(u, i, j) - at(u, i, j - 1)
-            )
-        ) / op->h2;
+            at(op->B, i, j + 1) *
+                (at(u, i, j + 1) - at(u, i, j)) -
+            at(op->B, i, j) *
+                (at(u, i, j) - at(u, i, j - 1))
+        ) /
+        (op->h2 * op->h2);
 }
 
 
@@ -76,10 +68,9 @@ static void left_boundary_perform(
         for (j = 1; j < op->PhiL->ny - 1; j++)
         {
             tmp =
-                -2.0 / op->h1 * at(op->A, 1, j) *
-                (
-                    (at(u, 1, j) - at(u, 0, j)) / op->h1
-                ) +
+                -2.0 * at(op->A, 1, j) /
+                    (op->h1 * op->h1) *
+                    (at(u, 1, j) - at(u, 0, j)) +
                 (at(op->Q, 0, j) + alpha_part) * at(u, 0, j) -
                 laplas_ypart(0, j, op, u);
 
@@ -106,21 +97,20 @@ static void right_boundary_perform(
 
     if (op->right_type == first)
     {
-        for (j = 0; j < op->PhiL->ny; j++)
+        for (j = 0; j < op->PhiR->ny; j++)
         {
-            set(v, M, j, op->PhiL->data[j]);
+            set(v, M, j, op->PhiR->data[j]);
         }
     }
     else
     {
         alpha_part = op->right_type == second ? 0.0 : 2.0 / op->h1;
-        for (j = 1; j < op->PhiL->ny - 1; j++)
+        for (j = 1; j < op->PhiR->ny - 1; j++)
         {
             tmp =
-                2.0 / op->h1 * at(op->A, M, j) *
-                (
-                    (at(u, M, j) - at(u, M - 1, j)) / op->h1
-                ) +
+                2.0 * at(op->A, M, j) /
+                    (op->h1 * op->h1) *
+                    (at(u, M, j) - at(u, M - 1, j)) +
                 (at(op->Q, M, j) + alpha_part) * at(u, M, j) -
                 laplas_ypart(M, j, op, u);
 
@@ -157,10 +147,9 @@ static void bottom_boundary_perform(
         for (i = 1; i < op->PhiB->nx - 1; i++)
         {
             tmp =
-                -2.0 / op->h2 * at(op->B, i, 1) *
-                (
-                    (at(u, i, 1) - at(u, i, 0)) / op->h2
-                ) +
+                -2.0 * at(op->B, i, 1) /
+                    (op->h2 * op->h2) *
+                    (at(u, i, 1) - at(u, i, 0)) +
                 (at(op->Q, i, 0) + alpha_part) * at(u, i, 0) -
                 laplas_xpart(i, 0, op, u);
 
@@ -198,10 +187,9 @@ static void top_boundary_perform(
         for (i = 1; i < op->PhiT->nx - 1; i++)
         {
             tmp =
-                2.0 / op->h2 * at(op->B, i, N) *
-                (
-                    (at(u, i, N) - at(u, i, N - 1)) / op->h2
-                ) +
+                2.0 * at(op->B, i, N) /
+                    (op->h2 * op->h2) *
+                    (at(u, i, N) - at(u, i, N - 1)) +
                 (at(op->Q, i, N) + alpha_part) * at(u, i, N) -
                 laplas_xpart(i, N, op, u);
 
@@ -231,18 +219,13 @@ static void lb_corner_perform(
         a2_part = op->bottom_type == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
-            -2.0 / op->h1 * at(op->A, 1, 0) *
-            (
-                (at(u, 1, 0) - at(u, 0, 0)) / op->h1
-            ) -
-            2.0 / op->h2 * at(op->B, 0, 1) *
-            (
-                (at(u, 0, 1) - at(u, 0, 0)) / op->h2
-            ) +
-            at(u, 0, 0) *
-            (
-                at(op->Q, 0, 0) + a1_part + a2_part
-            );
+            -2.0 * at(op->A, 1, 0) /
+                (op->h1 * op->h1) *
+                (at(u, 1, 0) - at(u, 0, 0)) -
+            2.0 * at(op->B, 0, 1) /
+                (op->h2 * op->h2) *
+                (at(u, 0, 1) - at(u, 0, 0)) +
+            at(u, 0, 0) * (at(op->Q, 0, 0) + a1_part + a2_part);
         
         set(v, 0, 0, tmp);
     }
@@ -270,18 +253,13 @@ static void rb_corner_perform(
         a2_part = op->bottom_type == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
-            2.0 / op->h1 * at(op->A, M, 0) *
-            (
-                (at(u, M, 0) - at(u, M - 1, 0)) / op->h1
-            ) -
-            2.0 / op->h2 * at(op->B, M, 1) *
-            (
-                (at(u, M, 1) - at(u, M, 0)) / op->h2
-            ) +
-            at(u, M, 0) *
-            (
-                at(op->Q, M, 0) + a1_part + a2_part
-            );
+            2.0 * at(op->A, M, 0) /
+                (op->h1 * op->h1) *
+                (at(u, M, 0) - at(u, M - 1, 0)) -
+            2.0 * at(op->B, M, 1) /
+                (op->h2 * op->h2) *
+                (at(u, M, 1) - at(u, M, 0)) +
+            at(u, M, 0) * (at(op->Q, M, 0) + a1_part + a2_part);
         
         set(v, M, 0, tmp);
     }
@@ -310,18 +288,13 @@ static void rt_corner_perform(
         a2_part = op->top_type == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
-            2.0 / op->h1 * at(op->A, M, N) *
-            (
-                (at(u, M, N) - at(u, M - 1, N)) / op->h1
-            ) +
-            2.0 / op->h2 * at(op->B, M, N) *
-            (
-                (at(u, M, N) - at(u, M, N - 1)) / op->h2
-            ) +
-            at(u, M, N) *
-            (
-                at(op->Q, M, N) + a1_part + a2_part
-            );
+            2.0 * at(op->A, M, N) /
+                (op->h1 * op->h1) *
+                (at(u, M, N) - at(u, M - 1, N)) +
+            2.0 * at(op->B, M, N) /
+                (op->h2 * op->h2) *
+                (at(u, M, N) - at(u, M, N - 1)) +
+            at(u, M, N) * (at(op->Q, M, N) + a1_part + a2_part);
         
         set(v, M, N, tmp);
     }
@@ -349,18 +322,13 @@ static void lt_corner_perform(
         a2_part = op->top_type == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
-            -2.0 / op->h1 * at(op->A, 1, N) *
-            (
-                (at(u, 1, N) - at(u, 0, N)) / op->h1
-            ) +
-            2.0 / op->h2 * at(op->B, 0, N) *
-            (
-                (at(u, 0, N) - at(u, 0, N - 1)) / op->h2
-            ) +
-            at(u, 0, N) *
-            (
-                at(op->Q, 0, N) + a1_part + a2_part
-            );
+            -2.0 * at(op->A, 1, N) /
+                (op->h1 * op->h1) *
+                (at(u, 1, N) - at(u, 0, N)) +
+            2.0 * at(op->B, 0, N) /
+                (op->h2 * op->h2) *
+                (at(u, 0, N) - at(u, 0, N - 1)) +
+            at(u, 0, N) * (at(op->Q, 0, N) + a1_part + a2_part);
         
         set(v, 0, N, tmp);
     }
@@ -380,18 +348,21 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
         for (i = 1; i < u->nx - 1; i++)
         {
             tmp =
-                -laplas_xpart(i, j, op, u) - laplas_ypart(i, j, op, u) +
+                -laplas_xpart(i, j, op, u) -
+                laplas_ypart(i, j, op, u) +
                 at(op->Q, i, j) * at(u, i, j);
             
             set(v, i, j, tmp);
         }
     }
 
+    /* calculate boundaries */
     left_boundary_perform(v, op, u);
     right_boundary_perform(v, op, u);
     bottom_boundary_perform(v, op, u);
     top_boundary_perform(v, op, u);
 
+    /* calculate corners */
     lb_corner_perform(v, op, u);
     rb_corner_perform(v, op, u);
     rt_corner_perform(v, op, u);
