@@ -1,6 +1,8 @@
 #ifndef HPC_POISSON_DEFINITIONS_MODULE_H
 #define HPC_POISSON_DEFINITIONS_MODULE_H
 
+#include <mpi.h>
+
 /*
  * Almost zero value.
  */
@@ -10,6 +12,11 @@
  * Format of the scalar value.
  */
 #define S_FORMAT "%lf"
+
+/*
+ * The type of the MPI sending data according to the scalar type
+ */
+#define MPI_SCALAR_TYPE MPI_DOUBLE
 
 /*
  * The type of the scalar.
@@ -161,11 +168,18 @@ typedef struct Problem
 
 
 /*
- * Contains solving configuration info.
+ * Contains configuration of the numerical method.
  */
-typedef struct SolvingInfo
+typedef struct NumericalConfig
 {
+    /*
+     * Grid nodes count along X-axis
+     */
     int x_grid_count;
+
+    /*
+     * grid nodes count along Y-axis.
+     */
     int y_grid_count;
 
     /*
@@ -173,7 +187,58 @@ typedef struct SolvingInfo
      * value, the solving process will stop.
      */
     scalar_t eps;
+} NumericalConfig;
 
+
+
+/*
+ * Contains MPI information.
+ */
+typedef struct MpiConfig
+{
+    /*
+     * Communicator for the grid processors.
+     */
+    MPI_Comm grid_comm;
+
+    /* processors count */
+
+    int x_proc_count;
+    int y_proc_count;
+
+    /* current processor coordinates in a virtual topology */
+
+    int x_proc_idx;
+    int y_proc_idx;
+} MpiConfig;
+
+
+
+/*
+ * Forward declared matrix.
+ */
+struct Matrix;
+
+/*
+ * Function that stores the given matrix.
+ * Parameters: matrix and iteration index.
+ */
+typedef void (*MatrixWriteFunc)(const struct Matrix *, int);
+
+
+
+/*
+ * Function for logging some message.
+ */
+typedef void (*LogFunc)(const char *);
+
+
+
+/*
+ * Contains information about the logging.
+ */
+typedef struct LogConfig
+{
     /*
      * The solving process will print iterations with this frequency
      * (i.e. if it is 10 then every 10-th iteration will be printed).
@@ -182,9 +247,37 @@ typedef struct SolvingInfo
     int iteration_print_frequency;
 
     /*
-     * The directory that will contain output information.
+     * The function for writing a part solution matrix.
      */
-    const char *output_dir;
-} SolvingInfo;
+    MatrixWriteFunc write_matrix;
+
+    /*
+     * The function for logging.
+     */
+    LogFunc log_message;
+} LogConfig;
+
+
+
+/*
+ * Contains solving configuration info.
+ */
+typedef struct SolvingConfig
+{
+    /*
+     * Logging configuration.
+     */
+    LogConfig log;
+
+    /*
+     * Numerical method configuration.
+     */
+    NumericalConfig num;
+
+    /*
+     * MPI information.
+     */
+    MpiConfig mpi;
+} SolvingConfig;
 
 #endif

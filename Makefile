@@ -1,5 +1,5 @@
-CC=gcc
-CFLAGS=-Wall -O3 -Ofast -fno-exceptions
+CC=mpicc
+CFLAGS=-Wall -O3 -Ofast
 LIBS=-lm
 LDFLAGS=
 

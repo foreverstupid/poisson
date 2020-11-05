@@ -102,4 +102,26 @@ void linear_combination(
  */
 scalar_t get_difference_cnorm(const Matrix *m1, const Matrix *m2);
 
+/*
+ * Gets the row of the matrix as an array.
+ */
+scalar_t *get_row(const Matrix *m, int i);
+
+/*
+ * Sets the row of the matrix from the array.
+ * Note: an array should contain an appropriate count of elements.
+ */
+void set_row(Matrix *m, int i, scalar_t *row);
+
+/*
+ * Gets the column of the matrix as an array.
+ */
+scalar_t *get_column(const Matrix *m, int i);
+
+/*
+ * Sets the column of the matrix from the array.
+ * Note: an array should contain an appropriate count of elements.
+ */
+void set_column(Matrix *m, int i, scalar_t *column);
+
 #endif

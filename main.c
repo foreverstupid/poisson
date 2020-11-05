@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <math.h>
-//#include <mpi.h>
+#include <mpi.h>
 #include "definitions.h"
 #include "solve.h"
 #include "output.h"
-
-#define SOLUTION_FILE_NAME "solution.csv"
 
 #define X1 0.0
 #define X2 4.0
@@ -56,6 +54,33 @@ scalar_t top(scalar_t t)
 }
 
 
+
+/*
+ * Fills the MPI information.
+ */
+void set_mpi_config(MpiConfig *mpi)
+{
+    int proc_count;
+    int rank;
+    int dims[] = { 0, 0 };
+    int periods[] = { 0, 0 };
+
+    MPI_Comm_size(MPI_COMM_WORLD, &proc_count);
+    MPI_Dims_create(proc_count, 2, dims);
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 1, &(mpi->grid_comm));
+
+    mpi->x_proc_count = dims[0];
+    mpi->y_proc_count = dims[1];
+
+    MPI_Comm_rank(mpi->grid_comm, &rank);
+    MPI_Cart_coords(mpi->grid_comm, rank, 2, dims);
+
+    mpi->x_proc_idx = dims[0];
+    mpi->y_proc_idx = dims[1];
+}
+
+
+
 int main(int argc, char **argv)
 {
     Problem problem = {
@@ -90,21 +115,37 @@ int main(int argc, char **argv)
         }
     };
 
-    SolvingInfo config;
-    char solution_file[80];
+    SolvingConfig config;
+    InitResult init_res;
 
-    sscanf(argv[1], "%d", &(config.x_grid_count));
-    sscanf(argv[2], "%d", &(config.y_grid_count));
-    sscanf(argv[3], S_FORMAT, &(config.eps));
-    sscanf(argv[4], "%d", &(config.iteration_print_frequency));
-    config.output_dir = argv[5];
+    sscanf(argv[1], "%d", &(config.num.x_grid_count));
+    sscanf(argv[2], "%d", &(config.num.y_grid_count));
+    sscanf(argv[3], S_FORMAT, &(config.num.eps));
+    sscanf(argv[4], "%d", &(config.log.iteration_print_frequency));
+    config.log.write_matrix = write_matrix;
+    config.log.log_message = log_info;
 
-    //MPI_Init(&argc, &argv);
-    Matrix *solution = solve(&problem, &config);
-    //MPI_Finalize();
-    sprintf(solution_file, "%s/" SOLUTION_FILE_NAME, argv[5]);
-    write_as_csv(solution, solution_file);
-    delete_matrix(solution);
+    if (MPI_Init(&argc, &argv) != 0)
+    {
+        fprintf(stderr, "Cannot init MPI");
+        return 1;
+    }
+
+    set_mpi_config(&(config.mpi));
+    init_res = init_output(
+        argv[5],
+        config.mpi.x_proc_idx,
+        config.mpi.y_proc_idx);
+
+    if (init_res != success)
+    {
+        MPI_Finalize();
+        fprintf(stderr, "Can not initialize output module: %d", init_res);
+        return 1;
+    }
+
+    solve(&problem, &config);
+    MPI_Finalize();
 
     return 0;
 }

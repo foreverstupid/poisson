@@ -180,3 +180,77 @@ scalar_t get_difference_cnorm(const Matrix *m1, const Matrix *m2)
 
     return cnorm;
 }
+
+
+
+/*
+ * Gets the given elements forn the data.
+ */
+static void get_elements(
+    const scalar_t *data,
+    int start,
+    int step,
+    int cnt,
+    scalar_t *buf)
+{
+    int i;
+    int j;
+
+    for (i = start, j = 0; j < cnt; i += step, j++)
+    {
+        buf[j] = data[i];
+    }
+}
+
+
+
+/*
+ * Sets the given elements to the data.
+ */
+static void set_elements(
+    scalar_t *data,
+    int start,
+    int step,
+    int cnt,
+    const scalar_t *buf)
+{
+    int i;
+    int j;
+
+    for (i = start, j = 0; j < cnt; i += step, j++)
+    {
+        data[i] = buf[j];
+    }
+}
+
+
+
+scalar_t *get_row(const Matrix *m, int i)
+{
+    scalar_t *res = (scalar_t *)malloc(m->nx * sizeof(scalar_t));
+    get_elements(m->data, i * m->nx, 1, m->nx, res);
+    return res;
+}
+
+
+
+void set_row(Matrix *m, int i, scalar_t *row)
+{
+    set_elements(m->data, i * m->nx, 1, m->nx, row);
+}
+
+
+
+scalar_t *get_column(const Matrix *m, int i)
+{
+    scalar_t *res = (scalar_t *)malloc(m->ny * sizeof(scalar_t));
+    get_elements(m->data, i, m->nx, m->ny, res);
+    return res;
+}
+
+
+
+void set_column(Matrix *m, int i, scalar_t *column)
+{
+    set_elements(m->data, i, m->nx, m->ny, column);
+}

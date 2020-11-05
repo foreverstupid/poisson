@@ -345,10 +345,8 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
     scalar_t tmp;
 
     /* calculate inner points */
-    #pragma omp parallel for
     for (j = 1; j < u->ny - 1; j++)
     {
-        #pragma omp parallel for
         for (i = 1; i < u->nx - 1; i++)
         {
             tmp =
@@ -439,7 +437,9 @@ static void correct_right_part(const Operator *op, const Problem *p)
 
 
 
-Operator *new_operator(const Problem *problem, const SolvingInfo *config)
+Operator *new_operator(
+    const Problem *problem,
+    const NumericalConfig *config)
 {
     Range xrange = {
         .count = config->x_grid_count,
