@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
     sscanf(argv[1], "%d", &(config.num.x_grid_count));
     sscanf(argv[2], "%d", &(config.num.y_grid_count));
-    sscanf(argv[3], S_FORMAT, &(config.num.eps));
+    sscanf(argv[3], SF, &(config.num.eps));
     sscanf(argv[4], "%d", &(config.log.iteration_print_frequency));
     config.log.write_matrix = write_matrix;
     config.log.log_message = log_info;

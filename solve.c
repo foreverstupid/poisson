@@ -239,8 +239,8 @@ static void get_part_problem(
     int x_start = x_cnt * config->mpi.x_proc_idx;
     int y_start = y_cnt * config->mpi.y_proc_idx;
 
-    /* last row/column can have less nodes due to unable to divide
-       equally */
+    /* last row/column can have different count of  nodes due to
+       unable to divide equally */
     int x_end =
         config->mpi.x_proc_idx == config->mpi.x_proc_count - 1
         ? config->num.x_grid_count - 1
@@ -289,6 +289,13 @@ static void get_part_problem(
     num->eps = config->num.eps;
     num->x_grid_count = x_end - x_start + 1;
     num->y_grid_count = y_end - y_start + 1;
+
+    char msg[128];
+    sprintf(
+        msg, "Area: ["SF", "SF"] x ["SF", "SF"]",
+        part->area.x1, part->area.x2, part->area.y1, part->area.y2);
+
+    config->log.log_message(msg);
 }
 
 

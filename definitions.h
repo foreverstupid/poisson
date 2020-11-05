@@ -11,7 +11,7 @@
 /*
  * Format of the scalar value.
  */
-#define S_FORMAT "%lf"
+#define SF "%lf"
 
 /*
  * The type of the MPI sending data according to the scalar type

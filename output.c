@@ -130,10 +130,10 @@ void write_matrix(const Matrix *m, int iteration_idx)
 
     for (j = 0; j < m->ny; j++)
     {
-        fprintf(out, S_FORMAT, at(m, 0, j));
+        fprintf(out, SF, at(m, 0, j));
         for (i = 1; i < m->nx; i++)
         {
-            fprintf(out, ", " S_FORMAT, at(m, i, j));
+            fprintf(out, " " SF, at(m, i, j));
         }
 
         putc('\n', out);

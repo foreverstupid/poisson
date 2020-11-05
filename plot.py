@@ -21,7 +21,7 @@ yrange = np.linspace(y1, y2, ycount)
 xs, ys = np.meshgrid(xrange, yrange)
 
 with open(out_file, "r") as f:
-    reader = csv.reader(f)
+    reader = csv.reader(f, delimiter = ' ')
     zs = np.array([
         [ float(val) for val in item ] for item in reader
     ])
