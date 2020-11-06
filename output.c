@@ -25,6 +25,13 @@ int y_proc_coord;
  */
 int initialized = 0;
 
+/* help variables for not output shadow edges */
+
+int x_start_shift;
+int x_end_shift;
+int y_start_shift;
+int y_end_shift;
+
 
 
 /*
@@ -74,7 +81,12 @@ static InitResult recoursive_mkdir(char *path)
 
 
 
-InitResult init_output(const char *out_dir, int x, int y)
+InitResult init_output(
+    const char *out_dir,
+    int x,
+    int y,
+    int x_count,
+    int y_count)
 {
     if (initialized )
     {
@@ -94,6 +106,10 @@ InitResult init_output(const char *out_dir, int x, int y)
         initialized = 1;
         x_proc_coord = x;
         y_proc_coord = y;
+        x_start_shift = x == 0 ? 0 : 1;
+        x_end_shift = x == x_count - 1 ? 0 : 1;
+        y_start_shift = y == 0 ? 0 : 1;
+        y_end_shift = y == y_count - 1 ? 0 : 1;
     }
     else
     {
@@ -128,10 +144,10 @@ void write_matrix(const Matrix *m, int iteration_idx)
 
     FILE *out = fopen(path, "w");
 
-    for (j = 0; j < m->ny; j++)
+    for (j = y_start_shift; j < m->ny - y_end_shift; j++)
     {
-        fprintf(out, SF, at(m, 0, j));
-        for (i = 1; i < m->nx; i++)
+        fprintf(out, SF, at(m, x_start_shift, j));
+        for (i = x_start_shift + 1; i < m->nx - x_end_shift; i++)
         {
             fprintf(out, " " SF, at(m, i, j));
         }

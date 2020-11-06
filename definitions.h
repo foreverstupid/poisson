@@ -16,7 +16,7 @@
 /*
  * The type of the MPI sending data according to the scalar type
  */
-#define MPI_SCALAR_TYPE MPI_DOUBLE
+#define MPI_SCALAR MPI_DOUBLE
 
 /*
  * The type of the scalar.

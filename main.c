@@ -135,7 +135,9 @@ int main(int argc, char **argv)
     init_res = init_output(
         argv[5],
         config.mpi.x_proc_idx,
-        config.mpi.y_proc_idx);
+        config.mpi.y_proc_idx,
+        config.mpi.x_proc_count,
+        config.mpi.y_proc_count);
 
     if (init_res != success)
     {
