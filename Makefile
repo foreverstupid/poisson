@@ -1,5 +1,5 @@
 CC=mpicc
-CFLAGS=-Wall -O3 -Ofast
+CFLAGS=-Wall -O5 -qarch=pwr8
 LIBS=-lm
 LDFLAGS=
 
@@ -11,8 +11,8 @@ NAME=poisson
 %.o: %.c %.h $(NOSRC)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(NAME): main.c $(OBJ) $(NOSRC)
-	$(CC) $(CFLAGS) $(INCDIR) $(LDFLAGS) $^ $(LIBS) -o $@
+$(NAME): main.c $(OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -o $@
 
 ifneq (clean, $(MAKECMDGOALS))
 -include deps.mk
@@ -22,6 +22,6 @@ deps.mk: $(SRC)
 	$(CC) -MM $^ > $@
 
 clean:
-	rm deps.mk
+	rm -f deps.mk
 	rm -f *.o
 	rm -f $(NAME)

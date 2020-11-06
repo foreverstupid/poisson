@@ -49,38 +49,6 @@ static int get_length(const char *str)
 
 
 
-/*
- * Creates the given directory recoursively if it dowsn't exist.
- */
-static InitResult recoursive_mkdir(char *path)
-{
-    int i;
-    struct stat s = { 0 };
-
-    if (stat(path, &s) == 0)
-    {
-        return success;
-    }
-
-    for (i = 0; path[i]; i++)
-    {
-        if (path[i] == '/')
-        {
-            path[i] = 0;
-            if (stat(path, &s) == -1 && mkdir(path, 0777) != 0)
-            {
-                return creating_path_error;
-            }
-
-            path[i] = '/';
-        }
-    }
-
-    return success;
-}
-
-
-
 InitResult init_output(
     const char *out_dir,
     int x,
@@ -93,30 +61,28 @@ InitResult init_output(
         return already_init;
     }
 
-    InitResult res;
     int len = get_length(out_dir);
     path = (char *)malloc((len + 80) * sizeof(char));
 
     sprintf(path, "%s/%d-%d/", out_dir, x, y);
     base_path_length = get_length(path);
 
-    res = recoursive_mkdir(path);
-    if (res == success)
+    if (mkdir(path, ACCESSPERMS) != 0)
     {
-        initialized = 1;
-        x_proc_coord = x;
-        y_proc_coord = y;
-        x_start_shift = x == 0 ? 0 : 1;
-        x_end_shift = x == x_count - 1 ? 0 : 1;
-        y_start_shift = y == 0 ? 0 : 1;
-        y_end_shift = y == y_count - 1 ? 0 : 1;
-    }
-    else
-    {
+        fprintf(stderr, "ERROR (%s): %s\n", path, strerror(errno));
         dispose_output();
+        return creating_path_error;
     }
 
-    return res;
+    initialized = 1;
+    x_proc_coord = x;
+    y_proc_coord = y;
+    x_start_shift = x == 0 ? 0 : 1;
+    x_end_shift = x == x_count - 1 ? 0 : 1;
+    y_start_shift = y == 0 ? 0 : 1;
+    y_end_shift = y == y_count - 1 ? 0 : 1;
+
+    return success;
 }
 
 
