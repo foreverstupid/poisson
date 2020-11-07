@@ -14,6 +14,11 @@
 #define SF "%lf"
 
 /*
+ * Format of the scalar for more informative output.
+ */
+#define SFI "%e"
+
+/*
  * The type of the MPI sending data according to the scalar type
  */
 #define MPI_SCALAR MPI_DOUBLE

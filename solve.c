@@ -221,6 +221,8 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
 
     int iteration_idx = 0;
     scalar_t curr_eps;
+    scalar_t local_eps;
+    char msg[256];
 
     do
     {
@@ -239,12 +241,21 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
         iteration_idx++;
         exchange_boundaries(*u, info);
 
-        curr_eps = get_difference_cnorm(*u, v);
+        local_eps = get_difference_cnorm(*u, v);
         MPI_Allreduce(
-            &curr_eps, &curr_eps, 1, MPI_SCALAR,
+            &local_eps, &curr_eps, 1, MPI_SCALAR,
             MPI_MAX, info->comm);
     }
     while (curr_eps >= info->eps);
+
+    sprintf(
+        msg,
+        "Last iteration: %d, "
+        "local difference: "SFI", "
+        "global difference: "SFI,
+        iteration_idx, local_eps, curr_eps);
+
+    info->log.log_message(msg);
 
     delete_matrix(v);
     delete_matrix(buf);
