@@ -25,13 +25,6 @@ int y_proc_coord;
  */
 int initialized = 0;
 
-/* help variables for not output shadow edges */
-
-int x_start_shift;
-int x_end_shift;
-int y_start_shift;
-int y_end_shift;
-
 
 
 /*
@@ -49,12 +42,7 @@ static int get_length(const char *str)
 
 
 
-InitResult init_output(
-    const char *out_dir,
-    int x,
-    int y,
-    int x_count,
-    int y_count)
+InitResult init_output(const char *out_dir, int x, int y)
 {
     if (initialized )
     {
@@ -62,12 +50,20 @@ InitResult init_output(
     }
 
     int len = get_length(out_dir);
+    struct stat s = { 0 };
     path = (char *)malloc((len + 80) * sizeof(char));
 
-    sprintf(path, "%s/%d-%d/", out_dir, x, y);
+    sprintf(path, "%s", out_dir);
+    if (path[len - 1] == '/')
+    {
+        path[len - 1] = 0;
+        len--;
+    }
+
+    sprintf(path + len, "/%d-%d/", x, y);
     base_path_length = get_length(path);
 
-    if (mkdir(path, ACCESSPERMS) != 0)
+    if (stat(path, &s) == -1 && mkdir(path, ACCESSPERMS) != 0)
     {
         fprintf(stderr, "ERROR (%s): %s\n", path, strerror(errno));
         dispose_output();
@@ -77,10 +73,6 @@ InitResult init_output(
     initialized = 1;
     x_proc_coord = x;
     y_proc_coord = y;
-    x_start_shift = x == 0 ? 0 : 1;
-    x_end_shift = x == x_count - 1 ? 0 : 1;
-    y_start_shift = y == 0 ? 0 : 1;
-    y_end_shift = y == y_count - 1 ? 0 : 1;
 
     return success;
 }
@@ -110,10 +102,10 @@ void write_matrix(const Matrix *m, int iteration_idx)
 
     FILE *out = fopen(path, "w");
 
-    for (j = y_start_shift; j < m->ny - y_end_shift; j++)
+    for (j = 0; j < m->ny; j++)
     {
-        fprintf(out, SF, at(m, x_start_shift, j));
-        for (i = x_start_shift + 1; i < m->nx - x_end_shift; i++)
+        fprintf(out, SF, at(m, 0, j));
+        for (i = 1; i < m->nx; i++)
         {
             fprintf(out, " " SF, at(m, i, j));
         }

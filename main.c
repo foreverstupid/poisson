@@ -62,40 +62,6 @@ scalar_t top(scalar_t t)
 
 
 /*
- * Creates the given directory recoursively if it doesn't exist.
- * Note: path should end with a slash.
- */
-int recoursive_mkdir(char *path)
-{
-    int i;
-    struct stat s = { 0 };
-
-    if (stat(path, &s) == 0)
-    {
-        return 0;
-    }
-
-    for (i = 1; path[i]; i++)
-    {
-        if (path[i] == '/')
-        {
-            path[i] = 0;
-            if (stat(path, &s) == -1 && mkdir(path, ACCESSPERMS) != 0)
-            {
-                fprintf(stderr, "ERROR (%s): %s\n", path, strerror(errno));
-                return 1;
-            }
-
-            path[i] = '/';
-        }
-    }
-
-    return 0;
-}
-
-
-
-/*
  * Fills the MPI information.
  */
 void set_mpi_config(MpiConfig *mpi)
@@ -165,13 +131,7 @@ int main(int argc, char **argv)
     config.log.write_matrix = write_matrix;
     config.log.log_message = log_info;
 
-    if (recoursive_mkdir(argv[5]) != 0)
-    {
-        fprintf(stderr, "Cannot create output directory '%s'\n", argv[5]);
-        return 1;
-    }
-
-    printf("Prepare to start MPI...\n");
+    printf("Prepare to init MPI...\n");
     if (MPI_Init(&argc, &argv) != 0)
     {
         fprintf(stderr, "Cannot init MPI");
@@ -179,21 +139,21 @@ int main(int argc, char **argv)
     }
 
     set_mpi_config(&(config.mpi));
+    printf("Output module initialization...\n");
     init_res = init_output(
         argv[5],
         config.mpi.x_proc_idx,
-        config.mpi.y_proc_idx,
-        config.mpi.x_proc_count,
-        config.mpi.y_proc_count);
+        config.mpi.y_proc_idx);
 
     if (init_res != success)
     {
         MPI_Finalize();
-        fprintf(stderr, "Can not initialize output module: %d\n", init_res);
+        fprintf(stderr, "Can not init output module: %d\n", init_res);
         return 1;
     }
 
     solve(&problem, &config);
+    dispose_output();
     MPI_Finalize();
 
     return 0;

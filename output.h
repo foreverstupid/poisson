@@ -23,12 +23,7 @@ typedef enum InitResult{
  * topology. For using the module you should successfully call this
  * function at least once. After that all others invocations are ignored.
  */
-InitResult init_output(
-    const char *out_dir,
-    int x,
-    int y,
-    int x_count,
-    int y_count);
+InitResult init_output(const char *out_dir, int x, int y);
 
 /*
  * Logs the information message.
