@@ -171,6 +171,45 @@ static void exchange_boundaries(Matrix *u, const ProcessInfo *info)
 
 
 /*
+ * Stores calculated data.
+ * Note: if the process has neighbours then its data has shadow edges,
+ * so we should prepare the calculated data before using write function.
+ */
+static void output_data(
+    const Matrix *m,
+    scalar_t *buf,
+    int iteration_idx,
+    const ProcessInfo *info)
+{
+    int i;
+    int j;
+
+    int x_start_shift = info->left_neighbour == MPI_PROC_NULL ? 0 : 1;
+    int x_end_shift = info->right_neighbour == MPI_PROC_NULL ? 0 : 1;
+
+    int y_start_shift = info->bottom_neighbour == MPI_PROC_NULL ? 0 : 1;
+    int y_end_shift = info->top_neighbour == MPI_PROC_NULL ? 0 : 1;
+
+    Matrix tmp = {
+        .data = buf,
+        .nx = m->nx - x_start_shift - x_end_shift,
+        .ny = m->ny - y_start_shift - y_end_shift
+    };
+
+    for (j = y_start_shift; j < m->ny - y_end_shift; j++)
+    {
+        for (i = x_start_shift; i < m->nx - x_end_shift; i++)
+        {
+            set(&tmp, i - x_start_shift, j - y_start_shift, at(m, i, j));
+        }
+    }
+
+    info->log.write_matrix(&tmp, iteration_idx);
+}
+
+
+
+/*
  * Performs iteration using the given initial function. It stores
  * the solution in the same argument.
  */
@@ -194,7 +233,7 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
         if (info->log.iteration_print_frequency > 0 &&
             iteration_idx % info->log.iteration_print_frequency == 0)
         {
-            info->log.write_matrix(*u, iteration_idx);
+            output_data(*u, buf->data, iteration_idx, info);
         }
 
         iteration_idx++;
@@ -379,14 +418,17 @@ void solve(const Problem *problem, const SolvingConfig *config)
 
     config->log.log_message("Getting process info...");
     ProcessInfo *info = get_processor_info(problem, config);
-    Matrix *part = new_matrix(info->op->F->nx, info->op->F->ny);
+    Matrix *u = new_matrix(info->op->F->nx, info->op->F->ny);
 
     config->log.log_message("Starting solving process...");
-    find_solution(&(part), info);
+    find_solution(&(u), info);
     config->log.log_message("Solution is found");
 
-    config->log.write_matrix(part, -1);
-    delete_matrix(part);
+    scalar_t *buf = (scalar_t *)malloc(u->nx * u->ny * sizeof(scalar_t));
+    output_data(u, buf, -1, info);
+
+    delete_matrix(u);
     delete_operator(info->op);
     free(info);
+    free(buf);
 }
