@@ -50,6 +50,12 @@ typedef struct ProcessInfo
     LogConfig log;
 
     /*
+     * The mask for matrix operation that prevents changing values of
+     * the boundary condition of the first order.
+     */
+    MatrixMask mask;
+
+    /*
      * Difference between iterations that indicates that the process of
      * solving is over.
      */
@@ -66,61 +72,27 @@ static void perform_iteration(
     Matrix *v,
     const Operator *op,
     const Matrix *u,
-    Matrix *buf)
+    Matrix *buf,
+    const MatrixMask *mask)
 {
     scalar_t tmp;
 
     scalar_t tau;                   /* iterational parameter */
     apply(v, op, u);
-    sub(v, op->F);                  /* residual */
+    sub(v, op->F, mask);            /* residual */
     apply(buf, op, v);              /* operator applied to residual */
 
-    tmp = dot_product(buf, v, op->h1, op->h2);
+    tmp = dot_product(buf, v, mask, op->h1, op->h2);
     if (fabs(tmp) > EPS)
     {
-        tau = tmp / get_squared_norm(buf, op->h1, op->h2);
+        tau = tmp / get_squared_norm(buf, mask, op->h1, op->h2);
     }
     else
     {
         tau = 0.0;
     }
 
-    linear_combination(v, u, -tau, v);
-    int N = v->ny - 1;
-    int M = v->nx - 1;
-    int i;
-
-    if (op->top.type == first)
-    {
-        for (i = 0; i < v->nx; i++)
-        {
-            set(v, i, N, op->top.phi[i]);
-        }
-    }
-
-    if (op->bottom.type == first)
-    {
-        for (i = 0; i < v->nx; i++)
-        {
-            set(v, i, 0, op->bottom.phi[i]);
-        }
-    }
-
-    if (op->left.type == first)
-    {
-        for (i = 0; i < v->ny; i++)
-        {
-            set(v, 0, i, op->left.phi[i]);
-        }
-    }
-
-    if (op->right.type == first)
-    {
-        for (i = 0; i < v->ny; i++)
-        {
-            set(v, M, i, op->right.phi[i]);
-        }
-    }
+    linear_combination(v, u, -tau, v, mask);
 }
 
 
@@ -128,44 +100,58 @@ static void perform_iteration(
 /*
  * Exchanges boundaries info among processors.
  */
-static void exchange_boundaries(Matrix *u, const ProcessInfo *info)
+static void exchange_boundaries(
+    Matrix *u,
+    const ProcessInfo *info,
+    scalar_t *buf)
 {
     MPI_Status status;
-    scalar_t *buf;
     int M = u->nx - 1;
     int N = u->ny - 1;
 
-    buf = get_column(u, 1);
-    MPI_Sendrecv(
-        buf, u->ny, MPI_SCALAR, info->left_neighbour, 0,
-        info->op->left.phi, u->ny, MPI_SCALAR, info->left_neighbour, 0,
-        info->comm, &status);
-    
-    free(buf);
+    if (info->left_neighbour != MPI_PROC_NULL)
+    {
+        get_column(u, 1, buf);
+        MPI_Sendrecv_replace(
+            buf, u->ny, MPI_SCALAR,
+            info->left_neighbour, 0, info->left_neighbour, 0,
+            info->comm, &status);
+        
+        set_column(u, 0, buf);
+    }
 
-    buf = get_column(u, M - 1);
-    MPI_Sendrecv(
-        buf, u->ny, MPI_SCALAR, info->right_neighbour, 0,
-        info->op->right.phi, u->ny, MPI_SCALAR, info->right_neighbour, 0,
-        info->comm, &status);
+    if (info->right_neighbour != MPI_PROC_NULL)
+    {
+        get_column(u, M - 1, buf);
+        MPI_Sendrecv_replace(
+            buf, u->ny, MPI_SCALAR,
+            info->right_neighbour, 0, info->right_neighbour, 0,
+            info->comm, &status);
 
-    free(buf);
+        set_column(u, M, buf);
+    }
 
-    buf = get_row(u, 1);
-    MPI_Sendrecv(
-        buf, u->nx, MPI_SCALAR, info->bottom_neighbour, 0,
-        info->op->bottom.phi, u->nx, MPI_SCALAR, info->bottom_neighbour, 0,
-        info->comm, &status);
+    if (info->bottom_neighbour != MPI_PROC_NULL)
+    {
+        get_row(u, 1, buf);
+        MPI_Sendrecv_replace(
+            buf, u->nx, MPI_SCALAR,
+            info->bottom_neighbour, 0, info->bottom_neighbour, 0,
+            info->comm, &status);
 
-    free(buf);
+        set_row(u, 0, buf);
+    }
 
-    buf = get_row(u, N - 1);
-    MPI_Sendrecv(
-        buf, u->nx, MPI_SCALAR, info->top_neighbour, 0,
-        info->op->top.phi, u->nx, MPI_SCALAR, info->top_neighbour, 0,
-        info->comm, &status);
+    if (info->top_neighbour != MPI_PROC_NULL)
+    {
+        get_row(u, N - 1, buf);
+        MPI_Sendrecv_replace(
+            buf, u->nx, MPI_SCALAR,
+            info->top_neighbour, 0, info->top_neighbour, 0,
+            info->comm, &status);
 
-    free(buf);
+        set_row(u, N, buf);
+    }
 }
 
 
@@ -226,22 +212,22 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
 
     do
     {
-        perform_iteration(v, info->op, *u, buf);
-
-        tmp = *u;
-        *u = v;
-        v = tmp;
-
         if (info->log.iteration_print_frequency > 0 &&
             iteration_idx % info->log.iteration_print_frequency == 0)
         {
             output_data(*u, buf->data, iteration_idx, info);
         }
 
-        iteration_idx++;
-        exchange_boundaries(*u, info);
+        perform_iteration(v, info->op, *u, buf, &(info->mask));
 
-        local_eps = get_difference_cnorm(*u, v);
+        tmp = *u;
+        *u = v;
+        v = tmp;
+
+        local_eps = get_difference_cnorm(*u, v, &(info->mask));
+        iteration_idx++;
+        exchange_boundaries(*u, info, buf->data);
+
         MPI_Allreduce(
             &local_eps, &curr_eps, 1, MPI_SCALAR,
             MPI_MAX, info->comm);
@@ -266,7 +252,7 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
 /*
  * Sets MPI information for the process.
  */
-static void set_mpi_info(ProcessInfo *info, const SolvingConfig *config)
+static void set_mpi_config(ProcessInfo *info, const SolvingConfig *config)
 {
     info->comm = config->mpi.grid_comm;
 
@@ -333,7 +319,6 @@ static void get_part_problem(
         ? 0
         : x_cnt * config->mpi.x_proc_idx - 1;
 
-
     int y_start =
         config->mpi.y_proc_idx == 0
         ? 0
@@ -349,13 +334,15 @@ static void get_part_problem(
         ? config->num.y_grid_count - 1
         : y_cnt * (config->mpi.y_proc_idx + 1);
 
-    scalar_t hx =
-        (global->area.x2 - global->area.x1) /
-        (config->num.x_grid_count - 1);
+    scalar_t hx = get_step(
+        global->area.x1,
+        global->area.x2,
+        config->num.x_grid_count);
 
-    scalar_t hy =
-        (global->area.y2 - global->area.y1) /
-        (config->num.y_grid_count - 1);
+    scalar_t hy = get_step(
+        global->area.y1,
+        global->area.y2,
+        config->num.y_grid_count);
 
     part->area.x1 = hx * x_start;
     part->area.x2 = hx * x_end;
@@ -399,6 +386,27 @@ static void get_part_problem(
 
 
 /*
+ * Sets the dot product calculating configuration.
+ */
+static void set_dot_config(ProcessInfo *proc)
+{
+    proc->mask.x0 = proc->op->left == first ? 1 : 0;
+    proc->mask.y0 = proc->op->bottom == first ? 1 : 0;
+
+    proc->mask.x1 =
+        proc->op->right == first
+        ? proc->op->F->nx - 2
+        : proc->op->F->nx - 1;
+
+    proc->mask.y1 =
+        proc->op->top == first
+        ? proc->op->F->ny - 2
+        : proc->op->F->ny - 1;
+}
+
+
+
+/*
  * Initializes all needed for solution process information.
  */
 static ProcessInfo *get_processor_info(
@@ -414,7 +422,9 @@ static ProcessInfo *get_processor_info(
     proc->log = config->log;
     proc->eps = config->num.eps;
 
-    set_mpi_info(proc, config);
+    set_dot_config(proc);
+    set_mpi_config(proc, config);
+
     return proc;
 }
 
@@ -429,13 +439,15 @@ void solve(const Problem *problem, const SolvingConfig *config)
 
     config->log.log_message("Getting process info...");
     ProcessInfo *info = get_processor_info(problem, config);
-    Matrix *u = copy_matrix(info->op->F);
+    Matrix *u = new_matrix(info->op->F->nx, info->op->F->ny);
+    scalar_t *buf = (scalar_t *)malloc(u->nx * u->ny * sizeof(scalar_t));
+
+    apply_first_order_boundary(u, info->op);
 
     config->log.log_message("Starting solving process...");
     find_solution(&(u), info);
     config->log.log_message("Solution is found");
 
-    scalar_t *buf = (scalar_t *)malloc(u->nx * u->ny * sizeof(scalar_t));
     output_data(u, buf, -1, info);
 
     delete_matrix(u);

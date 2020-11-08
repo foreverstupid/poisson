@@ -10,10 +10,50 @@
  */
 typedef struct Matrix
 {
-    scalar_t *data;     /* matrix values in a row-major order */
-    int nx;             /* size along X-axis (count of columns) */
-    int ny;             /* size along Y-axis (count of rows) */
+    /*
+     * Matrix values in the row-major order.
+     */
+    scalar_t *data;
+
+    /*
+     * The size of the matrix along X-axis (count of columns).
+     */
+    int nx;
+
+    /*
+     * The size of the matrix along Y-axis (count of rows).
+     */
+    int ny;
 } Matrix;
+
+
+
+/*
+ * The mask defines which elements of the matrix should be used in the
+ * operations.
+ */
+typedef struct MatrixMask
+{
+    /*
+     * Defines the first using element along X-axis.
+     */
+    int x0;
+
+    /*
+     * Defines the last using element along X-axis.
+     */
+    int x1;
+
+    /*
+     * Defines the first using element along Y-axis.
+     */
+    int y0;
+
+    /*
+     * Defines the last using element along Y-axis.
+     */
+    int y1;
+} MatrixMask;
 
 
 
@@ -62,28 +102,33 @@ static inline void set(Matrix *m, int i, int j, scalar_t val)
 scalar_t dot_product(
     const Matrix *m1,
     const Matrix *m2,
+    const MatrixMask *mask,
     scalar_t h1,
     scalar_t h2);
 
 /*
  * Returns the square of the norm of the given matrix.
  */
-inline static scalar_t get_squared_norm(const Matrix *matrix, scalar_t h1, scalar_t h2)
+inline static scalar_t get_squared_norm(
+    const Matrix *matrix,
+    const MatrixMask *mask,
+    scalar_t h1,
+    scalar_t h2)
 {
-    return dot_product(matrix, matrix, h1, h2);
+    return dot_product(matrix, matrix, mask, h1, h2);
 }
 
 /*
  * Multiplies the given matrix by the given scalar componentwise.
  */
-void multiply(Matrix *matrix, scalar_t f);
+void multiply(Matrix *matrix, scalar_t f, const MatrixMask *mask);
 
 /*
  * Subtracts one matrix from another, storing the result in the first
  * operand.
  * Note: the size of matricies should be the same.
  */
-void sub(Matrix *m1, const Matrix *m2);
+void sub(Matrix *m1, const Matrix *m2, const MatrixMask *mask);
 
 /*
  * Calculate linear combination of the given matricies, storing result
@@ -94,18 +139,22 @@ void linear_combination(
     Matrix *res,
     const Matrix *m1,
     scalar_t t,
-    const Matrix *m2);
+    const Matrix *m2,
+    const MatrixMask *mask);
 
 /*
  * Returns C-norm of the matrixs difference.
  * Note: the size of matricies should be the same.
  */
-scalar_t get_difference_cnorm(const Matrix *m1, const Matrix *m2);
+scalar_t get_difference_cnorm(
+    const Matrix *m1,
+    const Matrix *m2,
+    const MatrixMask *mask);
 
 /*
  * Gets the row of the matrix as an array.
  */
-scalar_t *get_row(const Matrix *m, int i);
+void get_row(const Matrix *m, int i, scalar_t *row);
 
 /*
  * Sets the row of the matrix from the array.
@@ -116,7 +165,7 @@ void set_row(Matrix *m, int i, scalar_t *row);
 /*
  * Gets the column of the matrix as an array.
  */
-scalar_t *get_column(const Matrix *m, int i);
+void get_column(const Matrix *m, int i, scalar_t *column);
 
 /*
  * Sets the column of the matrix from the array.

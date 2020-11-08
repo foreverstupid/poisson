@@ -57,9 +57,9 @@ static void left_boundary_perform(
     scalar_t tmp;
     scalar_t alpha_part;
 
-    if (op->left.type != first)
+    if (op->left != first)
     {
-        alpha_part = op->left.type == second ? 0.0 : 2.0 / op->h1;
+        alpha_part = op->left == second ? 0.0 : 2.0 / op->h1;
         for (j = 1; j < v->ny - 1; j++)
         {
             tmp =
@@ -90,9 +90,9 @@ static void right_boundary_perform(
     scalar_t alpha_part;
     int M = v->nx - 1;
 
-    if (op->right.type != first)
+    if (op->right != first)
     {
-        alpha_part = op->right.type == second ? 0.0 : 2.0 / op->h1;
+        alpha_part = op->right == second ? 0.0 : 2.0 / op->h1;
         for (j = 1; j < v->ny - 1; j++)
         {
             tmp =
@@ -122,9 +122,9 @@ static void bottom_boundary_perform(
     scalar_t tmp;
     scalar_t alpha_part;
 
-    if (op->bottom.type != first)
+    if (op->bottom != first)
     {
-        alpha_part = op->bottom.type == second ? 0.0 : 2.0 / op->h2;
+        alpha_part = op->bottom == second ? 0.0 : 2.0 / op->h2;
         for (i = 1; i < v->nx - 1; i++)
         {
             tmp =
@@ -155,9 +155,9 @@ static void top_boundary_perform(
     scalar_t alpha_part;
     int N = u->ny - 1;
 
-    if (op->top.type != first)
+    if (op->top != first)
     {
-        alpha_part = op->top.type == second ? 0.0 : 2.0 / op->h2;
+        alpha_part = op->top == second ? 0.0 : 2.0 / op->h2;
         for (i = 1; i < v->nx - 1; i++)
         {
             tmp =
@@ -187,10 +187,10 @@ static void lb_corner_perform(
     scalar_t a1_part;
     scalar_t a2_part;
 
-    if (op->bottom.type != first && op->left.type != first)
+    if (op->bottom != first && op->left != first)
     {
-        a1_part = op->left.type == second ? 0.0 : 2.0 / op->h1;
-        a2_part = op->bottom.type == second ? 0.0 : 2.0 / op->h2;
+        a1_part = op->left == second ? 0.0 : 2.0 / op->h1;
+        a2_part = op->bottom == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
             -2.0 * at(op->A, 1, 0) /
@@ -221,10 +221,10 @@ static void rb_corner_perform(
     scalar_t a2_part;
     int M = u->nx - 1;
 
-    if (op->bottom.type != first && op->right.type != first)
+    if (op->bottom != first && op->right != first)
     {
-        a1_part = op->right.type == second ? 0.0 : 2.0 / op->h1;
-        a2_part = op->bottom.type == second ? 0.0 : 2.0 / op->h2;
+        a1_part = op->right == second ? 0.0 : 2.0 / op->h1;
+        a2_part = op->bottom == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
             2.0 * at(op->A, M, 0) /
@@ -256,10 +256,10 @@ static void rt_corner_perform(
     int M = u->nx - 1;
     int N = u->ny - 1;
 
-    if (op->top.type != first && op->right.type != first)
+    if (op->top != first && op->right != first)
     {
-        a1_part = op->right.type == second ? 0.0 : 2.0 / op->h1;
-        a2_part = op->top.type == second ? 0.0 : 2.0 / op->h2;
+        a1_part = op->right == second ? 0.0 : 2.0 / op->h1;
+        a2_part = op->top == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
             2.0 * at(op->A, M, N) /
@@ -290,10 +290,10 @@ static void lt_corner_perform(
     scalar_t a2_part;
     int N = u->ny - 1;
 
-    if (op->top.type != first && op->left.type != first)
+    if (op->top != first && op->left != first)
     {
-        a1_part = op->left.type == second ? 0.0 : 2.0 / op->h1;
-        a2_part = op->top.type == second ? 0.0 : 2.0 / op->h2;
+        a1_part = op->left == second ? 0.0 : 2.0 / op->h1;
+        a2_part = op->top == second ? 0.0 : 2.0 / op->h2;
 
         tmp =
             -2.0 * at(op->A, 1, N) /
@@ -345,64 +345,116 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
 
 
 
+void apply_first_order_boundary(Matrix *v, const Operator *op)
+{
+    int i;
+    int M = v->nx - 1;
+    int N = v->ny - 1;
+
+    if (op->left == first)
+    {
+        for (i = 0; i <= N; i++)
+        {
+            set(v, 0, i, at(op->F, 0, i));
+        }
+    }
+
+    if (op->right == first)
+    {
+        for (i = 0; i <= N; i++)
+        {
+            set(v, M, i, at(op->F, M, i));
+        }
+    }
+
+    if (op->bottom == first)
+    {
+        for (i = 0; i <= M; i++)
+        {
+            set(v, i, 0, at(op->F, i, 0));
+        }
+    }
+
+    if (op->top == first)
+    {
+        for (i = 0; i <= M; i++)
+        {
+            set(v, i, N, at(op->F, i, N));
+        }
+    }
+}
+
+
+
 /*
  * Initializes boundary conditions.
  */
 static void init_boundary(Operator *op, const Problem *problem)
 {
     int i;
+    int M = op->F->nx - 1;
+    int N = op->F->ny - 1;
     scalar_t t;
+    scalar_t tmp;
 
-    op->left.type = problem->boundary.left.type;
-    op->left.phi = (scalar_t *)malloc(op->F->ny * sizeof(scalar_t));
+    op->left = problem->boundary.left.type;
     t = problem->area.y1;
-    for (i = 0; i < op->F->ny; i++)
+    for (i = 0; i <= N; i++)
     {
-        op->left.phi[i] = problem->boundary.left.phi(t);
+        tmp = problem->boundary.left.phi(t);
         t += op->h2;
-        if (op->left.type != first)
+
+        if (op->left != first)
         {
-            set(op->F, 0, i, at(op->F, 0, i) + 2.0 / op->h1 * op->left.phi[i]);
+            tmp = at(op->F, 0, i) + 2.0 / op->h1 * tmp;
         }
+
+        set(op->F, 0, i, tmp);
     }
 
-    op->right.type = problem->boundary.right.type;
-    op->right.phi = (scalar_t *)malloc(op->F->ny * sizeof(scalar_t));
+    op->right = problem->boundary.right.type;
     t = problem->area.y1;
-    for (i = 0; i < op->F->ny; i++)
+    for (i = 0; i <= N; i++)
     {
-        op->right.phi[i] = problem->boundary.right.phi(t);
+        tmp = problem->boundary.right.phi(t);
         t += op->h2;
-        if (op->right.type != first)
+
+        if (op->right != first)
         {
-            set(op->F, op->F->nx - 1, i, at(op->F, op->F->nx - 1, i) + 2.0 / op->h1 * op->right.phi[i]);
+            tmp = at(op->F, M, i) + 2.0 / op->h1 * tmp;
         }
+
+        set(op->F, M, i, tmp);
     }
 
-    op->bottom.type = problem->boundary.bottom.type;
-    op->bottom.phi = (scalar_t *)malloc(op->F->nx * sizeof(scalar_t));
+    op->bottom = problem->boundary.bottom.type;
     t = problem->area.x1;
-    for (i = 0; i < op->F->nx; i++)
+    for (i = 0; i <= M; i++)
     {
-        op->bottom.phi[i] = problem->boundary.bottom.phi(t);
+        tmp = problem->boundary.bottom.phi(t);
         t += op->h1;
-        if (op->bottom.type != first)
+
+        if (op->bottom != first)
         {
-            set(op->F, i, 0, at(op->F, i, 0) + 2.0 / op->h2 * op->bottom.phi[i]);
+            tmp = at(op->F, i, 0) + 2.0 / op->h2 * tmp;
         }
+
+        set(op->F, i, 0, tmp);
     }
 
-    op->top.type = problem->boundary.top.type;
-    op->top.phi = (scalar_t *)malloc(op->F->nx * sizeof(scalar_t));
+    op->top = problem->boundary.top.type;
     t = problem->area.x1;
-    for (i = 0; i < op->F->nx; i++)
+    for (i = 0; i <= M; i++)
     {
-        op->top.phi[i] = problem->boundary.top.phi(t);
+        tmp = problem->boundary.top.phi(t);
         t += op->h1;
-        if (op->bottom.type != first)
+
+        if (op->top != first)
         {
-            set(op->F, i, op->F->ny - 1, at(op->F, i, op->F->ny - 1) + 2.0 / op->h2 * op->top.phi[i]);
+            tmp = at(op->F, i, N) + 2.0 / op->h2 * tmp;
         }
+
+        set(op->F, i, N, tmp);
     }
 }
 
@@ -426,8 +478,8 @@ Operator *new_operator(
 
     Range2 ranges = { .xrange = xrange, .yrange = yrange };
 
-    scalar_t h1 = get_step(&(ranges.xrange));
-    scalar_t h2 = get_step(&(ranges.yrange));
+    scalar_t h1 = get_range_step(&(ranges.xrange));
+    scalar_t h2 = get_range_step(&(ranges.yrange));
 
     Range2 A_ranges = {
         .xrange = {
@@ -469,11 +521,6 @@ void delete_operator(Operator *op)
     delete_matrix(op->B);
     delete_matrix(op->Q);
     delete_matrix(op->F);
-
-    free(op->left.phi);
-    free(op->right.phi);
-    free(op->bottom.phi);
-    free(op->top.phi);
 
     free(op);
 }

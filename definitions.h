@@ -61,11 +61,19 @@ typedef struct Range2
 } Range2;
 
 /*
+ * Gets the step of a linspace with the given parameters.
+ */
+static inline scalar_t get_step(scalar_t start, scalar_t end, int count)
+{
+    return (end - start) / (count - 1);
+}
+
+/*
  * Gets the step of the range.
  */
-static inline scalar_t get_step(const Range *range)
+static inline scalar_t get_range_step(const Range *range)
 {
-    return (range->end - range->start) / (range->count - 1);
+    return get_step(range->start, range->end, range->count);
 }
 
 

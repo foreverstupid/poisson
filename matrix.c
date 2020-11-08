@@ -19,8 +19,8 @@ Matrix *get_matrix_from_func2(Func2 func, const Range2 *ranges)
     int j;
     scalar_t x;
     scalar_t y = ranges->yrange.start;
-    scalar_t xstep = get_step(&(ranges->xrange));
-    scalar_t ystep = get_step(&(ranges->yrange));
+    scalar_t xstep = get_range_step(&(ranges->xrange));
+    scalar_t ystep = get_range_step(&(ranges->yrange));
 
     Matrix *result = new_matrix(ranges->xrange.count, ranges->yrange.count);
     scalar_t* data = result->data;
@@ -47,7 +47,7 @@ Matrix *get_column_from_func(Func func, const Range *range)
 {
     Matrix *res = new_matrix(1, range->count);
     scalar_t y = range->start;
-    scalar_t step = get_step(range);
+    scalar_t step = get_range_step(range);
     int j;
 
     for (j = 0; j < res->ny; j++)
@@ -65,7 +65,7 @@ Matrix *get_row_from_func(Func func, const Range *range)
 {
     Matrix *res = new_matrix(range->count, 1);
     scalar_t x = range->start;
-    scalar_t step = get_step(range);
+    scalar_t step = get_range_step(range);
     int i;
 
     for (i = 0; i < res->nx; i++)
@@ -105,6 +105,7 @@ void delete_matrix(Matrix *matrix)
 scalar_t dot_product(
     const Matrix *m1,
     const Matrix *m2,
+    const MatrixMask *mask,
     scalar_t h1,
     scalar_t h2)
 {
@@ -116,10 +117,10 @@ scalar_t dot_product(
     int M = m1->nx - 1;
     int N = m1->ny - 1;
 
-    for (j = 0; j < m1->ny; j++)
+    for (j = mask->y0; j <= mask->y1; j++)
     {
         ry = j == 0 || j == N ? 0.5 * h2 : h2;
-        for (i = 0; i < m1->nx; i++)
+        for (i = mask->x0; i <= mask->x1; i++)
         {
             rx = i == 0 || i == M ? 0.5 * h1 : h1;
             res += at(m1, i, j) * at(m2, i, j) * rx * ry;
@@ -131,12 +132,37 @@ scalar_t dot_product(
 
 
 
-void multiply(Matrix *matrix, scalar_t f)
+void multiply(Matrix *matrix, scalar_t f, const MatrixMask *mask)
 {
     int i;
-    for (i = 0; i < matrix->nx * matrix->ny; i++)
+    int j;
+    scalar_t tmp;
+
+    for (j = mask->y0; j <= mask->y1; j++)
     {
-        matrix->data[i] *= f;
+        for (i = mask->x0; i <= mask->x1; i++)
+        {
+            tmp = at(matrix, i, j) * f;
+            set(matrix, i, j, tmp);
+        }
+    }
+}
+
+
+
+void sub(Matrix *m1, const Matrix *m2, const MatrixMask *mask)
+{
+    int i;
+    int j;
+    scalar_t tmp;
+
+    for (j = mask->y0; j <= mask->y1; j++)
+    {
+        for (i = mask->x0; i <= mask->x1; i++)
+        {
+            tmp = at(m1, i, j) - at(m2, i, j);
+            set(m1, i, j, tmp);
+        }
     }
 }
 
@@ -146,36 +172,40 @@ void linear_combination(
     Matrix *res,
     const Matrix *m1,
     scalar_t t,
-    const Matrix *m2)
+    const Matrix *m2,
+    const MatrixMask *mask)
 {
     int i;
-    for (i = 0; i < m1->nx * m1->ny; i++)
+    int j;
+    scalar_t tmp;
+
+    for (j = mask->y0; j <= mask->y1; j++)
     {
-        res->data[i] = m1->data[i] + t * m2->data[i];
+        for (i = mask->x0; i <= mask->x1; i++)
+        {
+            tmp = at(m1, i, j) + t * at(m2, i, j);
+            set(res, i, j, tmp);
+        }
     }
 }
 
 
 
-void sub(Matrix *m1, const Matrix *m2)
+scalar_t get_difference_cnorm(
+    const Matrix *m1,
+    const Matrix *m2,
+    const MatrixMask *mask)
 {
+    scalar_t cnorm = 0.0;
     int i;
-    for (i = 0; i < m1->nx * m1->ny; i++)
+    int j;
+
+    for (j = mask->y0; j <= mask->y1; j++)
     {
-        m1->data[i] -= m2->data[i];
-    }
-}
-
-
-
-scalar_t get_difference_cnorm(const Matrix *m1, const Matrix *m2)
-{
-    scalar_t cnorm = fabs(m1->data[0] - m2->data[0]);
-    int i;
-
-    for (i = 1; i < m1->nx * m1->ny; i++)
-    {
-        cnorm = fmax(cnorm, fabs(m1->data[i] - m2->data[i]));
+        for (i = mask->x0; i <= mask->x1; i++)
+        {
+            cnorm = fmax(cnorm, fabs(at(m1, i, j) - at(m2, i, j)));
+        }
     }
 
     return cnorm;
@@ -225,11 +255,9 @@ static void set_elements(
 
 
 
-scalar_t *get_row(const Matrix *m, int i)
+void get_row(const Matrix *m, int i, scalar_t *row)
 {
-    scalar_t *res = (scalar_t *)malloc(m->nx * sizeof(scalar_t));
-    get_elements(m->data, i * m->nx, 1, m->nx, res);
-    return res;
+    get_elements(m->data, i * m->nx, 1, m->nx, row);
 }
 
 
@@ -241,11 +269,9 @@ void set_row(Matrix *m, int i, scalar_t *row)
 
 
 
-scalar_t *get_column(const Matrix *m, int i)
+void get_column(const Matrix *m, int i, scalar_t *column)
 {
-    scalar_t *res = (scalar_t *)malloc(m->ny * sizeof(scalar_t));
-    get_elements(m->data, i, m->nx, m->ny, res);
-    return res;
+    get_elements(m->data, i, m->nx, m->ny, column);
 }
 
 
