@@ -67,7 +67,6 @@ static void left_boundary_perform(
                     (op->h1 * op->h1) *
                     (at(u, 1, j) - at(u, 0, j)) +
                 (at(op->Q, 0, j) + alpha_part) * at(u, 0, j) -
-                2.0 / op->h1 * op->left.phi[j] -
                 laplas_ypart(0, j, op, u);
 
             set(v, 0, j, tmp);
@@ -101,7 +100,6 @@ static void right_boundary_perform(
                     (op->h1 * op->h1) *
                     (at(u, M, j) - at(u, M - 1, j)) +
                 (at(op->Q, M, j) + alpha_part) * at(u, M, j) -
-                2.0 / op->h1 * op->right.phi[j] -
                 laplas_ypart(M, j, op, u);
 
             set(v, M, j, tmp);
@@ -134,7 +132,6 @@ static void bottom_boundary_perform(
                     (op->h2 * op->h2) *
                     (at(u, i, 1) - at(u, i, 0)) +
                 (at(op->Q, i, 0) + alpha_part) * at(u, i, 0) -
-                2.0 / op->h2 * op->bottom.phi[i] -
                 laplas_xpart(i, 0, op, u);
 
             set(v, i, 0, tmp);
@@ -168,7 +165,6 @@ static void top_boundary_perform(
                     (op->h2 * op->h2) *
                     (at(u, i, N) - at(u, i, N - 1)) +
                 (at(op->Q, i, N) + alpha_part) * at(u, i, N) -
-                2.0 / op->h2 * op->top.phi[i] -
                 laplas_xpart(i, N, op, u);
 
             set(v, i, N, tmp);
@@ -202,8 +198,7 @@ static void lb_corner_perform(
                 (at(u, 1, 0) - at(u, 0, 0)) -
             2.0 * at(op->B, 0, 1) /
                 (op->h2 * op->h2) *
-                (at(u, 0, 1) - at(u, 0, 0)) -
-            (2.0 / op->h1 + 2.0 / op->h2) * op->left.phi[0] +
+                (at(u, 0, 1) - at(u, 0, 0)) +
             at(u, 0, 0) * (at(op->Q, 0, 0) + a1_part + a2_part);
         
         set(v, 0, 0, tmp);
@@ -237,8 +232,7 @@ static void rb_corner_perform(
                 (at(u, M, 0) - at(u, M - 1, 0)) -
             2.0 * at(op->B, M, 1) /
                 (op->h2 * op->h2) *
-                (at(u, M, 1) - at(u, M, 0)) -
-            (2.0 / op->h1 + 2.0 / op->h2) * op->right.phi[0] +
+                (at(u, M, 1) - at(u, M, 0)) +
             at(u, M, 0) * (at(op->Q, M, 0) + a1_part + a2_part);
         
         set(v, M, 0, tmp);
@@ -273,8 +267,7 @@ static void rt_corner_perform(
                 (at(u, M, N) - at(u, M - 1, N)) +
             2.0 * at(op->B, M, N) /
                 (op->h2 * op->h2) *
-                (at(u, M, N) - at(u, M, N - 1)) -
-            (2.0 / op->h1 + 2.0 / op->h2) * op->right.phi[op->F->ny - 1] +
+                (at(u, M, N) - at(u, M, N - 1)) +
             at(u, M, N) * (at(op->Q, M, N) + a1_part + a2_part);
         
         set(v, M, N, tmp);
@@ -308,8 +301,7 @@ static void lt_corner_perform(
                 (at(u, 1, N) - at(u, 0, N)) +
             2.0 * at(op->B, 0, N) /
                 (op->h2 * op->h2) *
-                (at(u, 0, N) - at(u, 0, N - 1)) -
-            (2.0 / op->h1 + 2.0 / op->h2) * op->top.phi[0] +
+                (at(u, 0, N) - at(u, 0, N - 1)) +
             at(u, 0, N) * (at(op->Q, 0, N) + a1_part + a2_part);
         
         set(v, 0, N, tmp);
@@ -368,6 +360,10 @@ static void init_boundary(Operator *op, const Problem *problem)
     {
         op->left.phi[i] = problem->boundary.left.phi(t);
         t += op->h2;
+        if (op->left.type != first)
+        {
+            set(op->F, 0, i, at(op->F, 0, i) + 2.0 / op->h1 * op->left.phi[i]);
+        }
     }
 
     op->right.type = problem->boundary.right.type;
@@ -377,6 +373,10 @@ static void init_boundary(Operator *op, const Problem *problem)
     {
         op->right.phi[i] = problem->boundary.right.phi(t);
         t += op->h2;
+        if (op->right.type != first)
+        {
+            set(op->F, op->F->nx - 1, i, at(op->F, op->F->nx - 1, i) + 2.0 / op->h1 * op->right.phi[i]);
+        }
     }
 
     op->bottom.type = problem->boundary.bottom.type;
@@ -386,6 +386,10 @@ static void init_boundary(Operator *op, const Problem *problem)
     {
         op->bottom.phi[i] = problem->boundary.bottom.phi(t);
         t += op->h1;
+        if (op->bottom.type != first)
+        {
+            set(op->F, i, 0, at(op->F, i, 0) + 2.0 / op->h2 * op->bottom.phi[i]);
+        }
     }
 
     op->top.type = problem->boundary.top.type;
@@ -395,6 +399,10 @@ static void init_boundary(Operator *op, const Problem *problem)
     {
         op->top.phi[i] = problem->boundary.top.phi(t);
         t += op->h1;
+        if (op->bottom.type != first)
+        {
+            set(op->F, i, op->F->ny - 1, at(op->F, i, op->F->ny - 1) + 2.0 / op->h2 * op->top.phi[i]);
+        }
     }
 }
 

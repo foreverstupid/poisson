@@ -429,7 +429,7 @@ void solve(const Problem *problem, const SolvingConfig *config)
 
     config->log.log_message("Getting process info...");
     ProcessInfo *info = get_processor_info(problem, config);
-    Matrix *u = new_matrix(info->op->F->nx, info->op->F->ny);
+    Matrix *u = copy_matrix(info->op->F);
 
     config->log.log_message("Starting solving process...");
     find_solution(&(u), info);
