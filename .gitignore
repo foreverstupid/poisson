@@ -5,3 +5,5 @@
 .vscode/*
 deps.mk
 poisson
+arch/*
+bluegene/*

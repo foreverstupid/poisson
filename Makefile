@@ -1,9 +1,9 @@
 CC=mpicc
-CFLAGS=-Wall -O5 -qarch=pwr8
+CFLAGS=-Wall -O5
 LIBS=-lm
 LDFLAGS=
 
-SRC=matrix.c solve.c operator.c output.c
+SRC=matrix.c solve.c operator.c output.c process.c
 NOSRC=definitions.h
 OBJ=$(SRC:%.c=%.o)
 NAME=poisson
