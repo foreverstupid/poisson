@@ -126,12 +126,9 @@ static void get_part_problem(
     num->x_grid_count = x_end - x_start + 1;
     num->y_grid_count = y_end - y_start + 1;
 
-    char msg[128];
-    sprintf(
-        msg, "Area: ["SF", "SF"] x ["SF", "SF"]",
+    config->log.log_message(
+        "Area: ["SF", "SF"] x ["SF", "SF"]",
         part->area.x1, part->area.x2, part->area.y1, part->area.y2);
-
-    config->log.log_message(msg);
 }
 
 

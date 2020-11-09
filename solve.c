@@ -11,22 +11,15 @@ static void perform_iteration(
     Matrix *buf,
     const MatrixMask *mask)
 {
-    scalar_t tmp;
-
     scalar_t tau;                   /* iterational parameter */
     apply(v, op, u);
     sub(v, op->F, mask);            /* residual */
     apply(buf, op, v);              /* operator applied to residual */
 
-    tmp = dot_product(buf, v, mask, op->h1, op->h2);
-    if (fabs(tmp) > EPS)
-    {
-        tau = tmp / get_squared_norm(buf, mask, op->h1, op->h2);
-    }
-    else
-    {
-        tau = 0.0;
-    }
+    tau =
+        dot_product(buf, v, mask, op->h1, op->h2) /
+        get_squared_norm(buf, mask, op->h1, op->h2);
+
 
     linear_combination(v, u, -tau, v, mask);
 }
@@ -144,7 +137,8 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
     int iteration_idx = 0;
     scalar_t curr_eps;
     scalar_t local_eps;
-    char msg[256];
+
+    apply_first_order_boundary(v, info->op);
 
     do
     {
@@ -170,14 +164,11 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
     }
     while (curr_eps >= info->eps);
 
-    sprintf(
-        msg,
+    info->log.log_message(
         "Last iteration: %d, "
         "local difference: "SFI", "
         "global difference: "SFI,
         iteration_idx, local_eps, curr_eps);
-
-    info->log.log_message(msg);
 
     delete_matrix(v);
     delete_matrix(buf);

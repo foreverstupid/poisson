@@ -79,9 +79,13 @@ InitResult init_output(const char *out_dir, int x, int y)
 
 
 
-void log_info(const char *message)
+void log_info(const char *format, ...)
 {
-    printf("[%d:%d] %s\n", x_proc_coord, y_proc_coord, message);
+    va_list args;
+    va_start(args, format);
+    printf("[%d:%d] ", x_proc_coord, y_proc_coord);
+    vprintf(format, args);
+    putchar('\n');
 }
 
 

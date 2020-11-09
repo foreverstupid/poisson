@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <string.h>
 
@@ -28,7 +29,7 @@ InitResult init_output(const char *out_dir, int x, int y);
 /*
  * Logs the information message.
  */
-void log_info(const char *message);
+void log_info(const char *format, ...);
 
 /*
  * Stores the matrix. Negative iteration index for the final solution.

@@ -243,7 +243,7 @@ typedef void (*MatrixWriteFunc)(const struct Matrix *, int);
 /*
  * Function for logging some message.
  */
-typedef void (*LogFunc)(const char *);
+typedef void (*LogFunc)(const char *, ...);
 
 
 
