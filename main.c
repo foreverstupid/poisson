@@ -87,8 +87,38 @@ void set_mpi_config(MpiConfig *mpi)
 
 
 
+void measure_running_time(double start)
+{
+    int rank;
+    double local_duration;
+    double global_duration;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    local_duration = MPI_Wtime() - start;
+    MPI_Reduce(
+        &local_duration, &global_duration,
+        1, MPI_DOUBLE, MPI_MAX,
+        0, MPI_COMM_WORLD);
+
+    if (rank == 0)
+    {
+        printf("Running time: %lfs\n", global_duration);
+    }
+}
+
+
+
 int main(int argc, char **argv)
-{ 
+{
+    printf("Prepare to init MPI...\n");
+    if (MPI_Init(&argc, &argv) != 0)
+    {
+        fprintf(stderr, "Cannot init MPI");
+        return 1;
+    }
+
+    double start = MPI_Wtime();
+
     Problem problem = {
         .funcs = {
             .f = &F,
@@ -131,13 +161,6 @@ int main(int argc, char **argv)
     config.log.write_matrix = write_matrix;
     config.log.log_message = log_info;
 
-    printf("Prepare to init MPI...\n");
-    if (MPI_Init(&argc, &argv) != 0)
-    {
-        fprintf(stderr, "Cannot init MPI");
-        return 1;
-    }
-
     set_mpi_config(&(config.mpi));
     printf("Output module initialization...\n");
     init_res = init_output(
@@ -154,6 +177,8 @@ int main(int argc, char **argv)
 
     solve(&problem, &config);
     dispose_output();
+
+    measure_running_time(start);
     MPI_Finalize();
 
     return 0;
