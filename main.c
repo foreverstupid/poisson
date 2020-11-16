@@ -75,6 +75,11 @@ void set_mpi_config(MpiConfig *mpi)
     MPI_Dims_create(proc_count, 2, dims);
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 1, &(mpi->grid_comm));
 
+    if (mpi->grid_comm == MPI_COMM_NULL)
+    {
+        return;
+    }
+
     mpi->x_proc_count = dims[0];
     mpi->y_proc_count = dims[1];
 
@@ -162,6 +167,12 @@ int main(int argc, char **argv)
     config.log.log_message = log_info;
 
     set_mpi_config(&(config.mpi));
+    if (config.mpi.grid_comm == MPI_COMM_NULL)
+    {
+        MPI_Finalize();
+        return 0;
+    }
+
     printf("Output module initialization...\n");
     init_res = init_output(
         argv[5],
