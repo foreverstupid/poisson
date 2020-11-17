@@ -2,18 +2,23 @@
 
 /*
  * Performs a single iteration of the method of the smallest residuals
- * (u -> v).
+ * (v = u - \tau * r). Returns C-norm of the residual on the previous
+ * iteration. Thus, we can do at most one extra iteration.
  */
-static void perform_iteration(
+static scalar_t perform_iteration(
     Matrix *v,
     const Operator *op,
     const Matrix *u,
     Matrix *buf,
     const MatrixMask *mask)
 {
+    scalar_t r_norm;
     scalar_t tau;                   /* iterational parameter */
+
     apply(v, op, u);
     sub(v, op->F, mask);            /* residual */
+    r_norm = get_cnorm(v, mask);
+
     apply(buf, op, v);              /* operator applied to residual */
 
     tau =
@@ -22,6 +27,7 @@ static void perform_iteration(
 
 
     linear_combination(v, u, -tau, v, mask);
+    return r_norm;
 }
 
 
@@ -126,7 +132,8 @@ static void output_data(
 
 /*
  * Performs iteration using the given initial function. It stores
- * the solution in the same argument.
+ * the solution in the same argument. The exit creteria for the
+ * iterational method is ||r||_C < eps.
  */
 static void find_solution(Matrix **u, const ProcessInfo *info)
 {
@@ -139,6 +146,7 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
     scalar_t local_eps;
 
     apply_first_order_boundary(v, info->op);
+    exchange_boundaries(*u, info, buf->data);
 
     do
     {
@@ -146,15 +154,15 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
             iteration_idx % info->log.iteration_print_frequency == 0)
         {
             output_data(*u, buf->data, iteration_idx, info);
+            info->log.log_message("(%d) -> "SFI, iteration_idx, local_eps);
         }
 
-        perform_iteration(v, info->op, *u, buf, &(info->mask));
+        local_eps = perform_iteration(v, info->op, *u, buf, &(info->mask));
 
         tmp = *u;
         *u = v;
         v = tmp;
 
-        local_eps = get_difference_cnorm(*u, v, &(info->mask));
         iteration_idx++;
         exchange_boundaries(*u, info, buf->data);
 

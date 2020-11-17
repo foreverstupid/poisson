@@ -191,10 +191,7 @@ void linear_combination(
 
 
 
-scalar_t get_difference_cnorm(
-    const Matrix *m1,
-    const Matrix *m2,
-    const MatrixMask *mask)
+scalar_t get_cnorm(const Matrix *m, const MatrixMask *mask)
 {
     scalar_t cnorm = 0.0;
     int i;
@@ -204,7 +201,7 @@ scalar_t get_difference_cnorm(
     {
         for (i = mask->x0; i <= mask->x1; i++)
         {
-            cnorm = fmax(cnorm, fabs(at(m1, i, j) - at(m2, i, j)));
+            cnorm = fmax(cnorm, fabs(at(m, i, j)));
         }
     }
 

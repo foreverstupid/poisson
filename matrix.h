@@ -143,13 +143,9 @@ void linear_combination(
     const MatrixMask *mask);
 
 /*
- * Returns C-norm of the matrixs difference.
- * Note: the size of matricies should be the same.
+ * Returns C-norm of the matrix.
  */
-scalar_t get_difference_cnorm(
-    const Matrix *m1,
-    const Matrix *m2,
-    const MatrixMask *mask);
+scalar_t get_cnorm(const Matrix *m, const MatrixMask *mask);
 
 /*
  * Gets the row of the matrix as an array.
