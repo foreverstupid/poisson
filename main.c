@@ -4,7 +4,7 @@
 
 #include "definitions.h"
 #include "solve.h"
-#include "output.h"
+#include "io.h"
 #include "problem.h"
 
 
@@ -71,12 +71,16 @@ void print_run_info(char **argv)
         "Running configuration:\n"
         "    grid size:          %s x %s\n"
         "    required precision: %s\n"
+        "    maximum iterations: %s\n"
+        "    initial iteration:  %s\n"
         "    log frequency:      %s\n"
         "    data dir:           %s\n\n",
         argv[1], argv[2],
         argv[3],
         argv[4],
-        argv[5]);
+        argv[5],
+        argv[6],
+        argv[7]);
 }
 
 
@@ -87,18 +91,22 @@ void print_run_info(char **argv)
  */
 int init(int argc, char **argv, SolvingConfig *config)
 {
-    OutputInitResult init_res;
+    IOInitResult init_res;
     int rank;
-
-    if (argc < 5)
-    {
-        fprintf(stderr, "Too few cmd args\n");
-        return -1;
-    }
 
     if (MPI_Init(&argc, &argv) != 0)
     {
         fprintf(stderr, "Cannot init MPI");
+        return -1;
+    }
+
+    if (argc < 7)
+    {
+        fprintf(
+            stderr,
+            "Too few cmd args. Expected:\n"
+            "    xcnt ycnt eps max_iter init_iter log_freq data_dir\n");
+
         return -1;
     }
 
@@ -111,7 +119,9 @@ int init(int argc, char **argv, SolvingConfig *config)
     sscanf(argv[1], "%d", &(config->num.x_grid_count));
     sscanf(argv[2], "%d", &(config->num.y_grid_count));
     sscanf(argv[3], SF, &(config->num.eps));
-    sscanf(argv[4], "%d", &(config->log.iteration_print_frequency));
+    sscanf(argv[4], "%d", &(config->num.max_iterations));
+    sscanf(argv[5], "%d", &(config->num.init_iteration));
+    sscanf(argv[6], "%d", &(config->log.iteration_print_frequency));
 
     set_mpi_config(&(config->mpi));
     if (config->mpi.grid_comm == MPI_COMM_NULL)
@@ -122,12 +132,13 @@ int init(int argc, char **argv, SolvingConfig *config)
     }
 
     printf("Output module initialization...\n");
-    init_res = init_output(
-        argv[5],
+    init_res = init_io(
+        argv[7],
         config->mpi.x_proc_idx,
         config->mpi.y_proc_idx);
 
     config->log.write_matrix = write_matrix;
+    config->log.read_matrix = read_matrix;
     config->log.log_message = log_info;
 
     if (init_res != success)
@@ -149,12 +160,14 @@ int main(int argc, char **argv)
     rank = init(argc, argv, &config);
     if (rank == -1)
     {
+        /* something went wrong */
         MPI_Finalize();
         return 1;
     }
 
     if (config.mpi.grid_comm == MPI_COMM_NULL)
     {
+        /* this process is an extra one */
         MPI_Finalize();
         return 0;
     }

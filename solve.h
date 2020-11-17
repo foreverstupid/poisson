@@ -7,7 +7,6 @@
 #include "matrix.h"
 #include "operator.h"
 #include "process.h"
-#include "output.h"
 
 /*
  * Solves the given Poisson boundary values problem,

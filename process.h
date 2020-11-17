@@ -63,10 +63,9 @@ typedef struct ProcessInfo
     MatrixMask mask;
 
     /*
-     * Difference between iterations that indicates that the process of
-     * solving is over.
+     * Configuration of the numerical method.
      */
-    scalar_t eps;
+    NumericalConfig num;
 } ProcessInfo;
 
 

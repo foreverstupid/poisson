@@ -12,19 +12,19 @@
 #include "definitions.h"
 #include "matrix.h"
 
-typedef enum OutputInitResult{
+typedef enum IOInitResult{
     success = 0,
     already_init = 1,
     creating_path_error = 2
-} OutputInitResult;
+} IOInitResult;
 
 /*
- * Initializes the output information from the path to the output
+ * Initializes the I/O module from the path to the output
  * directory and XY-coordinates of the process in the virtual
  * topology. For using the module you should successfully call this
  * function at least once. After that all others invocations are ignored.
  */
-OutputInitResult init_output(const char *out_dir, int x, int y);
+IOInitResult init_io(const char *out_dir, int x, int y);
 
 /*
  * Logs the information message.
@@ -32,9 +32,20 @@ OutputInitResult init_output(const char *out_dir, int x, int y);
 void log_info(const char *format, ...);
 
 /*
- * Stores the matrix. Negative iteration index for the final solution.
+ * Stores the iteration. Negative iteration index for the final solution.
  */
-void write_matrix(const Matrix *m, int iteration_idx);
+void write_matrix(
+    const Matrix *m,
+    const MatrixMask *mask,
+    int iteration_idx);
+
+/*
+ * Reads the iteration. It does nothing on non-positive iteration index.
+ */
+void read_matrix(
+    Matrix *m,
+    const MatrixMask *mask,
+    int iteration_idx);
 
 /*
  * Disposes the resources, that was taken by the module.

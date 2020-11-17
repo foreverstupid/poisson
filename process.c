@@ -165,7 +165,7 @@ ProcessInfo *get_process_info(
     get_part_problem(&part_problem, &part_num, global_problem, config);
     proc->op = new_operator(&part_problem, &part_num);
     proc->log = config->log;
-    proc->eps = config->num.eps;
+    proc->num = config->num;
 
     set_dot_config(proc);
     set_mpi_config(proc, config);

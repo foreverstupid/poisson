@@ -191,15 +191,28 @@ typedef struct NumericalConfig
     int x_grid_count;
 
     /*
-     * grid nodes count along Y-axis.
+     * Grid nodes count along Y-axis.
      */
     int y_grid_count;
 
     /*
-     * If C-norm of difference between iterations is less than this
+     * If C-norm of the residual is less than this
      * value, the solving process will stop.
      */
     scalar_t eps;
+
+    /*
+     * Maximum count of performing iterations for one solving process.
+     */
+    int max_iterations;
+
+    /*
+     * If the last solving process stops before requirement accuracy
+     * reached, then this field contains the index of the last iteration,
+     * so the current process can use this iteration as an initial one.
+     * If the process is the first one, that this value is -1.
+     */
+    int init_iteration;
 } NumericalConfig;
 
 
@@ -233,10 +246,29 @@ typedef struct MpiConfig
 struct Matrix;
 
 /*
- * Function that stores the given matrix.
- * Parameters: matrix and iteration index.
+ * Forward declared metrix mask.
  */
-typedef void (*MatrixWriteFunc)(const struct Matrix *, int);
+struct MatrixMask;
+
+/*
+ * Function that stores the given matrix.
+ * Parameters: matrix, mask, and iteration index.
+ */
+typedef void (*MatrixWriteFunc)(
+    const struct Matrix *,
+    const struct MatrixMask *,
+    int);
+
+
+
+/*
+ * Fucntion that reads the matrix.
+ * Parameters: holder for matrix, mask, and iteration index.
+ */
+typedef void (*MatrixReadFunc)(
+    struct Matrix *,
+    const struct MatrixMask *,
+    int);
 
 
 
@@ -263,6 +295,11 @@ typedef struct LogConfig
      * The function for writing a part solution matrix.
      */
     MatrixWriteFunc write_matrix;
+
+    /*
+     * The function for reading a part solution matrix.
+     */
+    MatrixReadFunc read_matrix;
 
     /*
      * The function for logging.

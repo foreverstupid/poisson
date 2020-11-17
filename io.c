@@ -1,4 +1,4 @@
-#include "output.h"
+#include "io.h"
 
 /*
  * The path for matrix writing.
@@ -42,7 +42,7 @@ static int get_length(const char *str)
 
 
 
-OutputInitResult init_output(const char *out_dir, int x, int y)
+IOInitResult init_io(const char *out_dir, int x, int y)
 {
     if (initialized )
     {
@@ -90,7 +90,10 @@ void log_info(const char *format, ...)
 
 
 
-void write_matrix(const Matrix *m, int iteration_idx)
+void write_matrix(
+    const Matrix *m,
+    const MatrixMask *mask,
+    int iteration_idx)
 {
     int i;
     int j;
@@ -106,15 +109,52 @@ void write_matrix(const Matrix *m, int iteration_idx)
 
     FILE *out = fopen(path, "w");
 
-    for (j = 0; j < m->ny; j++)
+    for (j = mask->y0; j <= mask->y1; j++)
     {
-        fprintf(out, SF, at(m, 0, j));
-        for (i = 1; i < m->nx; i++)
+        fprintf(out, SF, at(m, mask->x0, j));
+        for (i = mask->x0 + 1; i <= mask->x1; i++)
         {
             fprintf(out, " " SF, at(m, i, j));
         }
 
         putc('\n', out);
+    }
+
+    fclose(out);
+}
+
+
+
+void read_matrix(
+    Matrix *m,
+    const MatrixMask *mask,
+    int iteration_idx)
+{
+    int i;
+    int j;
+
+    if (iteration_idx <= 0)
+    {
+        return;
+    }
+
+    sprintf(path + base_path_length, "u_%d.csv", iteration_idx);
+    FILE *out = fopen(path, "r");
+    scalar_t tmp;
+
+    for (j = mask->y0; j <= mask->y1; j++)
+    {
+        for (i = mask->x0; i <= mask->x1; i++)
+        {
+            if (fscanf(out, SF, &tmp) != 1)
+            {
+                log_info(
+                    "ERROR: cannot read element (%d, %d) of iteration %d",
+                    i, j, iteration_idx);
+            }
+
+            set(m, i, j, tmp);
+        }
     }
 
     fclose(out);
