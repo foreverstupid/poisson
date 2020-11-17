@@ -42,7 +42,7 @@ static int get_length(const char *str)
 
 
 
-InitResult init_output(const char *out_dir, int x, int y)
+OutputInitResult init_output(const char *out_dir, int x, int y)
 {
     if (initialized )
     {

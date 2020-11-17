@@ -3,7 +3,7 @@ CFLAGS=-Wall -O5
 LIBS=-lm
 LDFLAGS=
 
-SRC=matrix.c solve.c operator.c output.c process.c
+SRC=matrix.c solve.c operator.c output.c process.c problem.c
 NOSRC=definitions.h
 OBJ=$(SRC:%.c=%.o)
 NAME=poisson

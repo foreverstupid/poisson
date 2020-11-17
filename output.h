@@ -12,11 +12,11 @@
 #include "definitions.h"
 #include "matrix.h"
 
-typedef enum InitResult{
+typedef enum OutputInitResult{
     success = 0,
     already_init = 1,
     creating_path_error = 2
-} InitResult;
+} OutputInitResult;
 
 /*
  * Initializes the output information from the path to the output
@@ -24,7 +24,7 @@ typedef enum InitResult{
  * topology. For using the module you should successfully call this
  * function at least once. After that all others invocations are ignored.
  */
-InitResult init_output(const char *out_dir, int x, int y);
+OutputInitResult init_output(const char *out_dir, int x, int y);
 
 /*
  * Logs the information message.

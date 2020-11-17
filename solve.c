@@ -154,7 +154,10 @@ static void find_solution(Matrix **u, const ProcessInfo *info)
             iteration_idx % info->log.iteration_print_frequency == 0)
         {
             output_data(*u, buf->data, iteration_idx, info);
-            info->log.log_message("(%d) -> "SFI, iteration_idx, local_eps);
+            if (iteration_idx != 0)
+            {
+                info->log.log_message("(%d) -> "SFI, iteration_idx, local_eps);
+            }
         }
 
         local_eps = perform_iteration(v, info->op, *u, buf, &(info->mask));
