@@ -1,5 +1,5 @@
-CC=mpicc
-CFLAGS=-Wall -O5
+CC=mpixlc
+CFLAGS=-Wall -O2
 LIBS=-lm
 LDFLAGS=
 
