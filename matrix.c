@@ -117,6 +117,7 @@ scalar_t dot_product(
     int M = m1->nx - 1;
     int N = m1->ny - 1;
 
+    #pragma omp parallel for private(i, j, rx, ry) reduction(+:res)
     for (j = mask->y0; j <= mask->y1; j++)
     {
         ry = j == 0 || j == N ? 0.5 * h2 : h2;
@@ -138,6 +139,7 @@ void multiply(Matrix *matrix, scalar_t f, const MatrixMask *mask)
     int j;
     scalar_t tmp;
 
+    #pragma omp parallel for private(i, j, tmp)
     for (j = mask->y0; j <= mask->y1; j++)
     {
         for (i = mask->x0; i <= mask->x1; i++)
@@ -156,6 +158,7 @@ void sub(Matrix *m1, const Matrix *m2, const MatrixMask *mask)
     int j;
     scalar_t tmp;
 
+    #pragma omp parallel for private(i, j, tmp)
     for (j = mask->y0; j <= mask->y1; j++)
     {
         for (i = mask->x0; i <= mask->x1; i++)
@@ -179,6 +182,7 @@ void linear_combination(
     int j;
     scalar_t tmp;
 
+    #pragma omp parallel for private(i, j, tmp)
     for (j = mask->y0; j <= mask->y1; j++)
     {
         for (i = mask->x0; i <= mask->x1; i++)

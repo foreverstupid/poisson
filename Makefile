@@ -1,5 +1,7 @@
-CC=mpixlc
-CFLAGS=-Wall -O2
+CC=mpixlc			# mpixlc_r   for using OMP on BG/P
+CFLAGS=-O2			# -qsmp=omp  for using OMP on BG/P
+                    # -qarch=pwr8 for Polus
+					# -qarch=450d for BG
 LIBS=-lm
 LDFLAGS=
 
@@ -14,14 +16,6 @@ NAME=poisson
 $(NAME): main.c $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -o $@
 
-ifneq (clean, $(MAKECMDGOALS))
--include deps.mk
-endif
-
-deps.mk: $(SRC)
-	$(CC) -MM $^ > $@
-
 clean:
-	rm -f deps.mk
 	rm -f *.o
 	rm -f $(NAME)

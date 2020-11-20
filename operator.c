@@ -317,6 +317,7 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
     scalar_t tmp;
 
     /* calculate inner points */
+    #pragma omp parallel for private(i, j, tmp)
     for (j = 1; j < u->ny - 1; j++)
     {
         for (i = 1; i < u->nx - 1; i++)
@@ -330,17 +331,35 @@ void apply(Matrix *v, const Operator *op, const Matrix *u)
         }
     }
 
-    /* calculate boundaries */
-    left_boundary_perform(v, op, u);
-    right_boundary_perform(v, op, u);
-    bottom_boundary_perform(v, op, u);
-    top_boundary_perform(v, op, u);
+    #pragma omp parallel sections
+    {
+        /* calculate boundaries */
+        #pragma omp section
+        {
+            left_boundary_perform(v, op, u);
+        }
+        #pragma omp section
+        {
+            right_boundary_perform(v, op, u);
+        }
+        #pragma omp section
+        {
+            bottom_boundary_perform(v, op, u);
+        }
+        #pragma omp section
+        {
+            top_boundary_perform(v, op, u);
+        }
 
-    /* calculate corners */
-    lb_corner_perform(v, op, u);
-    rb_corner_perform(v, op, u);
-    rt_corner_perform(v, op, u);
-    lt_corner_perform(v, op, u);
+        #pragma omp section
+        {
+            /* calculate corners */
+            lb_corner_perform(v, op, u);
+            rb_corner_perform(v, op, u);
+            rt_corner_perform(v, op, u);
+            lt_corner_perform(v, op, u);
+        }
+    }
 }
 
 
