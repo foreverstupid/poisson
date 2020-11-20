@@ -1,7 +1,7 @@
 CC=mpixlc			# mpixlc_r   for using OMP on BG/P
 CFLAGS=-O2			# -qsmp=omp  for using OMP on BG/P
-                    # -qarch=pwr8 for Polus
-					# -qarch=450d for BG
+                    		# -qarch=pwr8 for Polus
+				# -qarch=450d for BG
 LIBS=-lm
 LDFLAGS=
 
